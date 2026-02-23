@@ -1,0 +1,74 @@
+\documentclass[10pt]{extarticle}
+\usepackage[letterpaper, margin=1.5in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{enumitem}
+\usepackage{cancel}
+\usepackage{tcolorbox}
+\usepackage{bold-extra}
+\usepackage{multicol}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue
+}
+\allowdisplaybreaks
+
+\title{\centering\Large\textsc{\textbf{Statistical Machine Learning: Research Proposal}}}
+\author{\large \textsc{Rento Saijo, Atticus Roop, and Manahil Shoaib}}
+\date{February 22, 2026}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\textsc{Page \thepage\ of \pageref{LastPage}}}
+\renewcommand{\headrulewidth}{0pt}
+
+\tcbset{colframe=darkgray!100, arc=0.1mm, boxrule=2pt, boxsep=1mm}
+\newtcolorbox{problem}[1][]{title={\textsc{#1}}}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+\vspace{-1em}\noindent\rule{\linewidth}{0.6pt}\vspace{0.5em}
+
+\begin{problem}
+[I. Background]
+Describe the background behind this research.
+\end{problem}
+
+\noindent NFL free agency is the market where teams translate on-field production into multi-year financial commitments under salary-cap constraints. Within that market, wide receivers are one of the highest-paid non-quarterback positions because elite receivers directly influence explosive plays, scoring efficiency, and quarterback performance. At the same time, receiver contracts are difficult to value because they reflect both observed production and uncertain future performance. In practice, teams appear to reward some combination of recent box-score output, advanced efficiency, age, and team context, but the relative importance of those factors is not transparent. This project studies that valuation process by modeling the historical relationship between receiver characteristics and contract outcomes.
+
+\begin{problem}
+[II. Motivation]
+Describe the motivation behind this research.
+\end{problem}
+
+\noindent Our motivation is to turn a high-stakes, noisy decision process into a measurable statistical problem. General managers commit millions of dollars and multiple years to wide receivers each offseason, yet it is often unclear whether those deals are primarily driven by individual performance, scheme and team environment, projected upside, or league-wide market inflation in a given year. By building predictive models for expected contract value and expected contract term, we can construct an objective benchmark for what a receiver should earn in free agency. That benchmark allows us to evaluate over- and undervaluation on real contracts while also demonstrating how statistical learning can support financial decisions in settings where errors are costly.
+
+\begin{problem}
+[III. Data]
+Describe the data for this research.
+\end{problem}
+
+\noindent The core dataset is a Spotrac contracts table covering 2011--2026. The current file has 31{,}600 total NFL contract rows and 16 columns, with 4{,}475 rows for wide receivers. Contract fields include player, position, team signed with, age at signing, start and end year, contract term (\texttt{Yrs}), total value, average salary, and average salary as a percentage of the salary cap at signing. In our modeling setup, we treat term and cap-adjusted annual value as two response variables in separate models. We also clean known quality issues in the raw file, including malformed numeric strings and implausible year entries, before modeling. To build predictors, we use CRAN package \texttt{nflreadr} to pull non-PFR sources: season-level player receiving statistics (\texttt{load\_player\_stats}), Next Gen receiving metrics (\texttt{load\_nextgen\_stats}), and team-level offensive context (\texttt{load\_team\_stats}). These tables are structured to one row per player-season (plus team-season context) and linked to each contract using the prior season as the primary information window.
+
+\begin{problem}
+[IV. Questions]
+Describe the questions this research attempts to address.
+\end{problem}
+
+\noindent The project asks which signals most strongly determine wide receiver contract outcomes and how reliable those signals are on unseen data. We will identify which individual statistic contributes the most predictive power for annual value, test whether individual production explains salary better than team context, and evaluate whether receiver contracts systematically increase in seasons when league offense is stronger overall. We will also compare two dependency structures for term and annual value: modeling term as a function of expected value versus modeling value as a function of expected term. Finally, using a recent holdout cohort of signed players, we will quantify how far actual contracts deviate from model-implied fair value and characterize the player profiles that are most often overvalued or undervalued.
+
+\begin{problem}
+[V. Plan]
+Describe the plan to conduct the research throughout the semester.
+\end{problem}
+
+\noindent The semester plan has five phases. In phase one, we finalize data engineering by cleaning the Spotrac contracts table and building reproducible pulls for regular receiving, Next Gen receiving, and team offense context, then merge them into a player-season modeling table. In phase two, we perform exploratory analysis on distributions, missingness, temporal trends, and collinearity, and we define train/validation/holdout splits that preserve time order to prevent leakage. In phase three, we fit baseline and regularized models for each response (term and cap-adjusted annual value), then compare them with more flexible nonlinear methods. In phase four, we evaluate out-of-sample performance, interpret variable importance and partial effects, and measure contract over- or undervaluation on recent signings. In phase five, we complete robustness checks, synthesize football and statistical implications, and deliver the final report and presentation with clear limitations and actionable conclusions.
+
+\end{document}
