@@ -5,7 +5,9 @@ options(readr.show_col_types = FALSE)
 # —— Packages —— #
 requiredPkgs <- c(
   'dplyr',
+  'httr2',
   'janitor',
+  'jsonlite',
   'nflreadr',
   'purrr',
   'readr',
@@ -37,7 +39,9 @@ testPath           <- file.path('data', 'test.csv')
 trainStartYear     <- 2002L
 validateYear       <- 2026L
 testReferenceDate  <- as.Date('2026-03-22')
-playerSeasonRange  <- seq.int(from = trainStartYear - 2L, to = validateYear - 1L)
+minPlayerSeason    <- 1999L
+playerSeasonRange  <- seq.int(from = minPlayerSeason, to = validateYear - 1L)
+transactionYears   <- seq.int(from = trainStartYear - 1L, to = validateYear)
 
 # —— Feature Families —— #
 regularMetricCols <- c(
@@ -177,14 +181,39 @@ parseNumericAny <- function(x) {
   readr::parse_number(as.character(x), na = c('', 'NA', 'NULL'))
 }
 
-normalizePlayerName <- function(x) {
+normalizeText <- function(x) {
+  x <- iconv(as.character(x), to = 'ASCII//TRANSLIT', sub = ' ')
+
   x |>
-    as.character() |>
     stringr::str_replace_all('[*+]', ' ') |>
     stringr::str_replace_all('[[:punct:]]', ' ') |>
     stringr::str_replace_all('\\b(jr|sr|ii|iii|iv|v)\\b', ' ') |>
     stringr::str_squish() |>
     stringr::str_to_lower()
+}
+
+normalizePlayerName <- function(x) {
+  normalizeText(x)
+}
+
+compactText <- function(x) {
+  stringr::str_replace_all(normalizeText(x), ' ', '')
+}
+
+firstToken <- function(x) {
+  stringr::word(x, 1L)
+}
+
+lastToken <- function(x) {
+  stringr::word(x, -1L)
+}
+
+safeDetectWord <- function(text, token) {
+  escaped <- stringr::str_replace_all(token, '([^[:alnum:]])', '\\\\\\1')
+
+  !is.na(token) &
+    token != '' &
+    stringr::str_detect(text, stringr::regex(paste0('\\b', escaped, '\\b')))
 }
 
 pickCol <- function(df, candidates, default = NA_character_) {
@@ -287,6 +316,14 @@ deltaTwoYear <- function(prev2, prev1) {
   )
 }
 
+bucketLongTerm <- function(termValue) {
+  dplyr::if_else(
+    is.na(termValue),
+    termValue,
+    pmin(termValue, 5)
+  )
+}
+
 ageOnDate <- function(birthDate, referenceDate) {
   birthDate     <- as.Date(birthDate)
   referenceDate <- as.Date(referenceDate)
@@ -307,6 +344,15 @@ ageOnDate <- function(birthDate, referenceDate) {
 
 standardizeTeam <- function(x) {
   nflreadr::clean_team_abbrs(stringr::str_squish(as.character(x)))
+}
+
+offseasonReferenceDate <- function(startYear) {
+  years <- as.integer(startYear)
+  out   <- rep(as.Date(NA), length(years))
+  valid <- !is.na(years)
+
+  out[valid] <- as.Date(sprintf('%d-03-15', years[valid]))
+  out
 }
 
 renameSelected <- function(df, cols, newNames) {
@@ -379,6 +425,399 @@ pullSeasonsWithBackfill <- function(seasons, fetchManyFun, fetchOneFun, label) {
   )
 
   dplyr::bind_rows(raw, retryRows)
+}
+
+pullSchedulesRaw <- function(seasons) {
+  pullSeasonsWithBackfill(
+    seasons,
+    function() nflreadr::load_schedules(seasons),
+    function(season) nflreadr::load_schedules(season),
+    'nflreadr::load_schedules'
+  )
+}
+
+buildSeasonCalendar <- function(schedulesRaw) {
+  scheduleDates <- as.data.frame(schedulesRaw)
+  scheduleDates$gamedayRaw <- pickCol(scheduleDates, c('gameday', 'game_date'), NA_character_)
+
+  scheduleDates |>
+    dplyr::filter(game_type == 'REG', !is.na(gamedayRaw), gamedayRaw != '') |>
+    dplyr::transmute(
+      season        = as.integer(season),
+      seasonEndDate = as.Date(gamedayRaw)
+    ) |>
+    dplyr::group_by(season) |>
+    dplyr::summarise(
+      seasonEndDate = max(seasonEndDate, na.rm = TRUE),
+      .groups = 'drop'
+    ) |>
+    dplyr::arrange(season)
+}
+
+derivePriorCompletedSeasons <- function(referenceDates, seasonCalendar) {
+  dates      <- as.Date(referenceDates)
+  endDates   <- seasonCalendar$seasonEndDate
+  seasonVals <- seasonCalendar$season
+  prev1      <- rep(NA_integer_, length(dates))
+  prev2      <- rep(NA_integer_, length(dates))
+
+  for (i in seq_along(dates)) {
+    if (is.na(dates[[i]])) {
+      next
+    }
+
+    completed <- seasonVals[!is.na(endDates) & endDates < dates[[i]]]
+
+    if (length(completed) >= 1L) {
+      prev1[[i]] <- completed[[length(completed)]]
+    }
+
+    if (length(completed) >= 2L) {
+      prev2[[i]] <- completed[[length(completed) - 1L]]
+    }
+  }
+
+  dplyr::tibble(
+    prev1Season = prev1,
+    prev2Season = prev2
+  )
+}
+
+assignPriorCompletedSeasons <- function(data, referenceCol, seasonCalendar) {
+  priorSeasons <- derivePriorCompletedSeasons(data[[referenceCol]], seasonCalendar)
+
+  data$prev1Season <- priorSeasons$prev1Season
+  data$prev2Season <- priorSeasons$prev2Season
+  data
+}
+
+extractSigningTermHint <- function(clause) {
+  clauseNorm <- normalizeText(clause)
+
+  dplyr::case_when(
+    stringr::str_detect(clauseNorm, '\\b(one|1)[ -]?year\\b')   ~ 1L,
+    stringr::str_detect(clauseNorm, '\\b(two|2)[ -]?year\\b')   ~ 2L,
+    stringr::str_detect(clauseNorm, '\\b(three|3)[ -]?year\\b') ~ 3L,
+    stringr::str_detect(clauseNorm, '\\b(four|4)[ -]?year\\b')  ~ 4L,
+    stringr::str_detect(clauseNorm, '\\b(five|5)[ -]?year\\b')  ~ 5L,
+    stringr::str_detect(clauseNorm, '\\b(six|6)[ -]?year\\b')   ~ 6L,
+    stringr::str_detect(clauseNorm, '\\b(seven|7)[ -]?year\\b') ~ 7L,
+    stringr::str_detect(clauseNorm, '\\b(eight|8)[ -]?year\\b') ~ 8L,
+    stringr::str_detect(clauseNorm, '\\b(5th|fifth) year option\\b') ~ 1L,
+    stringr::str_detect(clauseNorm, '\\bfranchise tag\\b') ~ 1L,
+    stringr::str_detect(clauseNorm, '\\btransition tag\\b') ~ 1L,
+    stringr::str_detect(clauseNorm, '\\btendered\\b') ~ 1L,
+    stringr::str_detect(clauseNorm, '\\bexclusive rights free agent\\b') ~ 1L,
+    TRUE ~ NA_integer_
+  )
+}
+
+extractSigningEndYearHint <- function(clause) {
+  throughYear <- stringr::str_match(
+    clause,
+    stringr::regex('through(?: the)? (\\d{4}) (?:season|campaign)', ignore_case = TRUE)
+  )[, 2L]
+
+  as.integer(throughYear)
+}
+
+classifySigningAction <- function(clause) {
+  clauseNorm <- normalizeText(clause)
+
+  dplyr::case_when(
+    stringr::str_detect(clauseNorm, '^re signed\\b') ~ 'resign',
+    stringr::str_detect(clauseNorm, '5th year option') ~ 'fifth_year_option',
+    stringr::str_detect(clauseNorm, 'franchise tag|transition tag') ~ 'tag',
+    stringr::str_detect(clauseNorm, '^tendered\\b') ~ 'tender',
+    stringr::str_detect(clauseNorm, 'extension') ~ 'extension',
+    stringr::str_detect(clauseNorm, '^agreed to terms with\\b') ~ 'agreed',
+    stringr::str_detect(clauseNorm, '^signed\\b') ~ 'signed',
+    TRUE ~ 'other'
+  )
+}
+
+splitTransactionClauses <- function(description) {
+  stringr::str_split(
+    description,
+    '(?<=\\.)\\s+(?=(?:Signed|Re-signed|Agreed to terms with|Exercised|Placed|Applied|Tendered|Waived|Released|Activated|Promoted|Claimed|Traded|Named|Hired|Fired|Designated|Converted|Restructured)\\b)'
+  )[[1L]] |>
+    stringr::str_squish() |>
+    stats::na.omit() |>
+    as.character() |>
+    (\(x) x[x != ''])()
+}
+
+isContractLikeClause <- function(clause) {
+  clauseNorm <- normalizeText(clause)
+
+  startsLikeContract <- stringr::str_detect(
+    clauseNorm,
+    '^(signed|re signed|agreed to terms with|exercised the 5th year option for|placed the franchise tag on|applied the franchise tag to|tendered)\\b'
+  )
+
+  hasRosterMove <- stringr::str_detect(
+    clauseNorm,
+    stringr::regex(
+      paste(
+        c(
+          'active roster',
+          'practice squad',
+          'injured reserve',
+          'return from injured reserve',
+          'pup list',
+          'non football injury',
+          'waivers?',
+          'waived',
+          'released',
+          'terminated',
+          'traded',
+          'promoted',
+          'activated',
+          'elevated',
+          'designated',
+          'converted',
+          'restructured'
+        ),
+        collapse = '|'
+      ),
+      ignore_case = TRUE
+    )
+  )
+
+  hasStaffMove <- stringr::str_detect(
+    clauseNorm,
+    stringr::regex(
+      paste(
+        c(
+          'coach',
+          'coordinator',
+          'manager',
+          'president',
+          'assistant',
+          'analyst',
+          'advisor',
+          'scouting',
+          'director',
+          'quality control',
+          'front office',
+          'chief operating officer',
+          'business operations',
+          'hired',
+          'fired',
+          'named'
+        ),
+        collapse = '|'
+      ),
+      ignore_case = TRUE
+    )
+  )
+
+  startsLikeContract & !hasRosterMove & !hasStaffMove
+}
+
+performEspnTransactionRequest <- function(dates, page) {
+  request <- httr2::request('https://site.api.espn.com/apis/site/v2/sports/football/nfl/transactions') |>
+    httr2::req_url_query(limit = 1000L, page = page, dates = dates)
+
+  response <- tryCatch(
+    httr2::req_perform(request),
+    error = function(e) {
+      NULL
+    }
+  )
+
+  if (is.null(response)) {
+    return(NULL)
+  }
+
+  if (httr2::resp_status(response) >= 400L) {
+    return(NULL)
+  }
+
+  jsonlite::fromJSON(
+    httr2::resp_body_string(response),
+    simplifyDataFrame = TRUE,
+    flatten           = TRUE
+  )
+}
+
+extractEspnTransactionRows <- function(payload) {
+  tx <- payload$transactions
+
+  if (is.null(tx) || length(tx) == 0L) {
+    return(dplyr::tibble())
+  }
+
+  tx <- as.data.frame(tx, stringsAsFactors = FALSE)
+
+  dplyr::tibble(
+    txDate      = as.Date(substr(pickCol(tx, c('date'), ''), 1L, 10L)),
+    signedTeam  = standardizeTeam(pickCol(tx, c('team.abbreviation'), NA_character_)),
+    description = stringr::str_squish(pickCol(tx, c('description'), NA_character_))
+  ) |>
+    dplyr::filter(!is.na(txDate), !is.na(signedTeam), !is.na(description), description != '')
+}
+
+fetchEspnTransactionsYear <- function(calendarYear) {
+  dates        <- sprintf('%d0101-%d1231', calendarYear, calendarYear)
+  payloadFirst <- retryFetch(
+    function() performEspnTransactionRequest(dates, 1L),
+    sprintf('ESPN NFL transactions %d page 1', calendarYear)
+  )
+
+  if (is.null(payloadFirst) || length(payloadFirst) == 0L) {
+    return(dplyr::tibble())
+  }
+
+  pageCount <- as.integer(parseNumericAny(payloadFirst$pageCount))
+  rows      <- extractEspnTransactionRows(payloadFirst)
+
+  if (is.na(pageCount) || pageCount <= 1L) {
+    return(rows)
+  }
+
+  moreRows <- purrr::map_dfr(
+    seq.int(from = 2L, to = pageCount),
+    function(page) {
+      payload <- retryFetch(
+        function() performEspnTransactionRequest(dates, page),
+        sprintf('ESPN NFL transactions %d page %d', calendarYear, page)
+      )
+
+      if (is.null(payload) || length(payload) == 0L) {
+        return(dplyr::tibble())
+      }
+
+      extractEspnTransactionRows(payload)
+    }
+  )
+
+  dplyr::bind_rows(rows, moreRows)
+}
+
+buildEspnTransactions <- function(calendarYears) {
+  purrr::map_dfr(
+    sort(unique(as.integer(calendarYears))),
+    fetchEspnTransactionsYear
+  ) |>
+    dplyr::distinct()
+}
+
+buildSigningClauses <- function(transactions) {
+  if (nrow(transactions) == 0L) {
+    return(
+      dplyr::tibble(
+        txDate         = as.Date(character()),
+        signedTeam     = character(),
+        clause         = character(),
+        clauseNorm     = character(),
+        clauseCompact  = character(),
+        termTx         = integer(),
+        endYearTx      = integer(),
+        actionType     = character(),
+        positionWrHint = logical()
+      )
+    )
+  }
+
+  transactions |>
+    dplyr::mutate(clause = purrr::map(description, splitTransactionClauses)) |>
+    tidyr::unnest_longer(clause) |>
+    dplyr::mutate(clause = stringr::str_squish(clause)) |>
+    dplyr::filter(clause != '') |>
+    dplyr::filter(isContractLikeClause(clause)) |>
+    dplyr::mutate(
+      clauseNorm     = normalizeText(clause),
+      clauseCompact  = compactText(clause),
+      termTx         = extractSigningTermHint(clause),
+      endYearTx      = extractSigningEndYearHint(clause),
+      actionType     = classifySigningAction(clause),
+      positionWrHint = safeDetectWord(clauseNorm, 'wr') |
+        stringr::str_detect(clauseNorm, '\\bwide receiver\\b')
+    ) |>
+    dplyr::distinct(signedTeam, txDate, clause, .keep_all = TRUE)
+}
+
+matchSigningDates <- function(contracts, signingClauses) {
+  if (nrow(signingClauses) == 0L) {
+    return(
+      dplyr::tibble(
+        contractRowId          = integer(),
+        dateOfSigningObserved  = as.Date(character())
+      )
+    )
+  }
+
+  candidates <- contracts |>
+    dplyr::filter(!is.na(startYear), !is.na(signedTeam), !is.na(playerKey), playerKey != '') |>
+    dplyr::transmute(
+      contractRowId,
+      signedTeam,
+      startYear,
+      endYear,
+      termRounded         = as.integer(round(termRaw)),
+      prevSignedTeam,
+      windowStart         = as.Date(sprintf('%d-07-01', startYear - 1L)),
+      windowEnd           = as.Date(sprintf('%d-12-31', startYear)),
+      dateTarget          = offseasonReferenceDate(startYear),
+      nameNorm            = playerKey,
+      nameCompact         = compactText(playerKey),
+      firstName           = firstToken(playerKey),
+      lastName            = lastToken(playerKey),
+      sameTeamContinuation = !is.na(prevSignedTeam) & prevSignedTeam == signedTeam
+    ) |>
+    dplyr::inner_join(signingClauses, by = 'signedTeam', relationship = 'many-to-many') |>
+    dplyr::filter(txDate >= windowStart, txDate <= windowEnd) |>
+    dplyr::mutate(
+      lastHit         = safeDetectWord(clauseNorm, lastName),
+      fullHit         = stringr::str_detect(clauseCompact, stringr::fixed(nameCompact)),
+      firstHit        = nchar(firstName) > 1L & safeDetectWord(clauseNorm, firstName),
+      firstInitialHit = nchar(firstName) > 0L &
+        stringr::str_detect(
+          clauseNorm,
+          stringr::regex(paste0('\\b', substr(firstName, 1L, 1L), '\\.?\\b'))
+        ),
+      termOk          = is.na(termTx) | is.na(termRounded) | termTx == termRounded,
+      endOk           = is.na(endYearTx) | is.na(endYear) | endYearTx == endYear,
+      nameScore       = dplyr::case_when(
+        fullHit         ~ 100L,
+        firstHit        ~ 90L,
+        firstInitialHit ~ 80L,
+        TRUE            ~ 70L
+      ),
+      continuityScore = dplyr::case_when(
+        sameTeamContinuation & actionType %in% c('resign', 'extension', 'tag', 'tender', 'fifth_year_option') ~ 5L,
+        !sameTeamContinuation & actionType %in% c('signed', 'agreed') ~ 2L,
+        TRUE ~ 0L
+      ),
+      dateGap = abs(as.integer(txDate - dateTarget)),
+      score   = nameScore +
+        dplyr::if_else(positionWrHint, 5L, 0L) +
+        dplyr::if_else(!is.na(termTx), 10L, 0L) +
+        dplyr::if_else(!is.na(endYearTx), 15L, 0L) +
+        continuityScore
+    ) |>
+    dplyr::filter(lastHit, termOk, endOk, nameScore >= 80L)
+
+  candidates |>
+    dplyr::arrange(contractRowId, dplyr::desc(score), dateGap, txDate) |>
+    dplyr::group_by(contractRowId) |>
+    dplyr::mutate(
+      rank      = dplyr::row_number(),
+      nextScore = dplyr::nth(score, 2L, default = NA_integer_),
+      nextGap   = dplyr::nth(dateGap, 2L, default = NA_integer_),
+      nextDate  = dplyr::nth(txDate, 2L, default = as.Date(NA)),
+      accepted  = is.na(nextScore) |
+        score > nextScore |
+        (score == nextScore & dateGap < nextGap) |
+        (score == nextScore & dateGap == nextGap & txDate < nextDate)
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::filter(rank == 1L, accepted) |>
+    dplyr::transmute(
+      contractRowId,
+      dateOfSigningObserved = txDate
+    )
 }
 
 buildLagTable <- function(source, keyCol, seasonCol, valueCols, prefix, lagLabel, fallback = FALSE) {
@@ -572,7 +1011,7 @@ readContracts <- function(dataDir, pattern) {
       ageAtSigning          = parseNumericAny(age_at_signing),
       startYear             = as.integer(parseNumericAny(start_year)),
       endYearRaw            = as.integer(parseNumericAny(end_year)),
-      term                  = parseNumericAny(yrs),
+      termRaw               = parseNumericAny(yrs),
       totalValue            = parseNumericAny(value),
       aav                   = parseNumericAny(average_salary),
       aavPerc               = parseNumericAny(capPctRaw) / 100,
@@ -583,8 +1022,8 @@ readContracts <- function(dataDir, pattern) {
     dplyr::filter(pos == 'WR') |>
     dplyr::mutate(
       expectedEndYear = dplyr::if_else(
-        !is.na(startYear) & !is.na(term),
-        startYear + as.integer(round(term)) - 1L,
+        !is.na(startYear) & !is.na(termRaw),
+        startYear + as.integer(round(termRaw)) - 1L,
         NA_integer_
       ),
       endYear = dplyr::case_when(
@@ -592,8 +1031,65 @@ readContracts <- function(dataDir, pattern) {
         !is.na(expectedEndYear) &
           (endYearRaw < startYear | endYearRaw > startYear + 10L) ~ expectedEndYear,
         TRUE ~ endYearRaw
+      ),
+      term = bucketLongTerm(termRaw)
+    ) |>
+    dplyr::select(
+      contractRowId,
+      sourceFile,
+      playerName,
+      playerKey,
+      pos,
+      signedTeamRaw,
+      signedTeam,
+      ageAtSigning,
+      startYear,
+      endYearRaw,
+      endYear,
+      expectedEndYear,
+      termRaw,
+      term,
+      totalValue,
+      aav,
+      aavPerc,
+      signingBonus,
+      guaranteeAtSign,
+      practicalGuarantee
+    ) |>
+    dplyr::mutate(
+      endYear = dplyr::case_when(
+        is.na(endYear) ~ expectedEndYear,
+        TRUE ~ endYear
       )
     ) |>
+    dplyr::arrange(playerKey, startYear, dplyr::desc(endYear), dplyr::desc(term), dplyr::desc(aav), contractRowId) |>
+    dplyr::group_by(playerKey) |>
+    dplyr::mutate(
+      coveredByEarlierContract = purrr::map_lgl(
+        seq_len(dplyr::n()),
+        function(i) {
+          if (i == 1L) {
+            return(FALSE)
+          }
+
+          earlier <- seq_len(i - 1L)
+
+          any(
+            !is.na(signedTeam[earlier]) &
+              signedTeam[earlier] == signedTeam[i] &
+              !is.na(startYear[earlier]) &
+              !is.na(endYear[earlier]) &
+              !is.na(startYear[i]) &
+              !is.na(endYear[i]) &
+              startYear[earlier] < startYear[i] &
+              endYear[earlier] >= endYear[i]
+          )
+        }
+      )
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::filter(!coveredByEarlierContract) |>
+    dplyr::select(-coveredByEarlierContract) |>
     dplyr::arrange(playerKey, startYear, endYear, aav, contractRowId) |>
     dplyr::group_by(playerKey) |>
     dplyr::mutate(
@@ -612,8 +1108,10 @@ readContracts <- function(dataDir, pattern) {
     ) |>
     dplyr::ungroup() |>
     dplyr::mutate(
-      prev1Season = startYear - 1L,
-      prev2Season = startYear - 2L
+      dateOfSigningObserved = as.Date(NA),
+      featureReferenceDate  = as.Date(NA),
+      signingDateObserved   = FALSE,
+      signingDateSource     = NA_character_
     )
 }
 
@@ -766,18 +1264,12 @@ matchContractPlayers <- function(contracts, playerReference) {
         is.na(rookieSeason)    ~ 1,
         playerRefRookieGap < 0 ~ 10,
         TRUE                   ~ 0
-      ),
-      teamPenalty          = dplyr::if_else(
-        !is.na(latestTeam) & !is.na(signedTeam) & latestTeam == signedTeam,
-        0,
-        1
       )
     ) |>
     dplyr::arrange(
       contractRowId,
       rookiePenalty,
       playerRefAgeGap,
-      teamPenalty,
       dplyr::desc(!is.na(playerId)),
       playerRefRookieGap
     ) |>
@@ -804,23 +1296,21 @@ matchContractPlayers <- function(contracts, playerReference) {
         TRUE                                                  ~ FALSE
       )
     ) |>
-    dplyr::select(-signingReferenceDate, -referenceAge, -rookiePenalty, -teamPenalty)
+    dplyr::select(-signingReferenceDate, -referenceAge, -rookiePenalty)
 }
 
 # —— External Data —— #
-buildTeamSeasons <- function(seasons) {
+buildTeamSeasons <- function(seasons, schedulesRaw = NULL) {
   raw <- pullSeasonsWithBackfill(
     seasons,
     function() nflreadr::load_team_stats(seasons = seasons, summary_level = 'reg'),
     function(season) nflreadr::load_team_stats(seasons = season, summary_level = 'reg'),
     'nflreadr::load_team_stats'
   )
-  schedulesRaw <- pullSeasonsWithBackfill(
-    seasons,
-    function() nflreadr::load_schedules(seasons),
-    function(season) nflreadr::load_schedules(season),
-    'nflreadr::load_schedules'
-  )
+
+  if (is.null(schedulesRaw)) {
+    schedulesRaw <- pullSchedulesRaw(seasons)
+  }
 
   raw$pointsRaw <- pickCol(raw, c('points', 'fantasy_points'), NA_real_)
 
@@ -1220,8 +1710,10 @@ buildTestRows <- function(contracts) {
         NA_real_
       ),
       observedContractNumber = observedContractNumber + 1L,
-      prev1Season            = validateYear - 1L,
-      prev2Season            = validateYear - 2L,
+      dateOfSigningObserved  = as.Date(NA),
+      featureReferenceDate   = testReferenceDate,
+      signingDateObserved    = FALSE,
+      signingDateSource      = 'test_reference_date',
       isEntryLike            = dplyr::case_when(
         !is.na(rookieSeason) ~ validateYear == rookieSeason,
         TRUE                 ~ FALSE
@@ -1241,12 +1733,57 @@ buildTestRows <- function(contracts) {
 # —— Run —— #
 contractsRaw     <- readContracts(contractsDir, contractsPattern)
 playerReference  <- buildPlayerReference()
-contracts        <- matchContractPlayers(contractsRaw, playerReference)
-teamSeasons      <- buildTeamSeasons(playerSeasonRange)
+schedulesRaw     <- pullSchedulesRaw(playerSeasonRange)
+seasonCalendar   <- buildSeasonCalendar(schedulesRaw)
+transactionsRaw  <- buildEspnTransactions(transactionYears)
+signingClauses   <- buildSigningClauses(transactionsRaw)
+contractsMatched <- matchContractPlayers(contractsRaw, playerReference)
+signingMatches   <- matchSigningDates(contractsMatched, signingClauses)
+contracts        <- contractsMatched |>
+  dplyr::left_join(
+    signingMatches,
+    by           = 'contractRowId',
+    relationship = 'one-to-one',
+    suffix       = c('', '.matched')
+  ) |>
+  dplyr::mutate(
+    dateOfSigningObserved = dplyr::coalesce(
+      dateOfSigningObserved.matched,
+      dateOfSigningObserved
+    ),
+    featureReferenceDate = dplyr::coalesce(
+      dateOfSigningObserved,
+      offseasonReferenceDate(startYear)
+    ),
+    signingDateObserved = !is.na(dateOfSigningObserved),
+    signingDateSource   = dplyr::if_else(
+      signingDateObserved,
+      'espn_transactions',
+      'offseason_proxy'
+    )
+  ) |>
+  dplyr::select(-dateOfSigningObserved.matched)
+teamSeasons      <- buildTeamSeasons(playerSeasonRange, schedulesRaw)
 regularSeasons   <- buildRegularPlayerSeasons(playerSeasonRange, teamSeasons)
 snapSeasons      <- buildSnapPlayerSeasons(playerSeasonRange)
 ngsSeasons       <- buildNgsPlayerSeasons(playerSeasonRange)
 marketSeasons    <- buildMarketSeasons(contracts)
+
+signingCoverage <- contracts |>
+  dplyr::filter(startYear >= trainStartYear, startYear <= validateYear) |>
+  dplyr::group_by(startYear) |>
+  dplyr::summarise(
+    contracts      = dplyr::n(),
+    observedDates  = sum(signingDateObserved, na.rm = TRUE),
+    observedRate   = observedDates / contracts,
+    .groups = 'drop'
+  )
+
+message(sprintf(
+  'Observed ESPN signing dates matched for %d of %d actual contracts.',
+  sum(signingCoverage$observedDates, na.rm = TRUE),
+  sum(signingCoverage$contracts, na.rm = TRUE)
+))
 
 actualRows <- contracts |>
   dplyr::filter(startYear >= trainStartYear, startYear <= validateYear) |>
@@ -1255,7 +1792,8 @@ actualRows <- contracts |>
 testRows <- buildTestRows(contracts) |>
   dplyr::mutate(dataset = 'test')
 
-modelRows <- dplyr::bind_rows(actualRows, testRows)
+modelRows <- dplyr::bind_rows(actualRows, testRows) |>
+  assignPriorCompletedSeasons('featureReferenceDate', seasonCalendar)
 
 modelRows <- addHybridPlayerBlock(modelRows, regularSeasons, 'reg',  'playerId')
 modelRows <- addHybridPlayerBlock(modelRows, snapSeasons,    'snap', 'pfrId')
@@ -1304,6 +1842,10 @@ baseCols <- c(
   'playerKey',
   'playerId',
   'pfrId',
+  'dateOfSigningObserved',
+  'featureReferenceDate',
+  'signingDateObserved',
+  'signingDateSource',
   'startYear',
   'term',
   'aav',
@@ -1347,6 +1889,7 @@ baseCols <- c(
 
 dropCols <- c(
   'endYear',
+  'termRaw',
   'yearsOfExperience',
   'pos',
   'signedTeamRaw',

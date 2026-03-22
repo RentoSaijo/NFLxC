@@ -12,7 +12,7 @@ All three files are produced by `R/clean.R`.
 
 ## Responses
 
-- `term`: Actual contract length in years.
+- `term`: Actual contract length in years, with all `5+` year deals bucketed to `5` for modeling.
 - `aavPerc`: Actual average annual value as a share of the league cap at signing.
 
 `aav` is retained for bookkeeping and later dollar translation, but it is not a modeling target here. For an `aavPerc` model, current-contract `aav` should be excluded from predictors in the training script.
@@ -21,14 +21,14 @@ All three files are produced by `R/clean.R`.
 
 - `train.csv` contains contracts with `startYear >= 2002`, `startYear <= 2025`, `!isEntryLike`, non-missing `term`, and non-missing `aavPerc`.
 - `validate.csv` contains the same contract type for `startYear == 2026`.
-- `test.csv` contains non-entry WRs whose latest observed contract ended after 2025, who do not already have a 2026 contract in the raw files, and whose 2026 outcome columns are intentionally blank.
+- `test.csv` contains non-entry WRs whose latest observed contract ended in 2025, who do not already have a 2026 contract in the raw files, and whose 2026 outcome columns are intentionally blank.
 
 Current row counts from the latest build:
 
-- `train.csv`: 3,159 rows across 1,421 players.
-- `validate.csv`: 122 rows across 122 players.
-- `test.csv`: 166 rows across 166 players.
-- Each file currently has 452 columns.
+- `train.csv`: 2,795 rows across 1,304 players.
+- `validate.csv`: 91 rows across 91 players.
+- `test.csv`: 163 rows across 163 players.
+- Each file currently has 456 columns.
 
 ## Source Data
 
@@ -51,6 +51,12 @@ These provide the contract spine: player, team, signing age, term, value, AAV, c
 - `load_team_stats(summary_level = 'reg')`: Prior-season team offensive environment.
 - `load_schedules()`: Prior-season team results context.
 
+### Public ESPN transactions API
+
+- `https://site.api.espn.com/apis/site/v2/sports/football/nfl/transactions`
+
+This feed is used to estimate exact signing dates when possible. `R/clean.R` pulls full calendar years, splits transaction descriptions into action clauses, and matches likely contract events back to the local contract rows by team, player name, and term or end-year hints.
+
 `load_pfr_advstats()` was tested and rejected for this workflow because the available output is quarterback-oriented and did not produce usable WR coverage.
 
 ## Contract Cleaning
@@ -59,8 +65,11 @@ These provide the contract spine: player, team, signing age, term, value, AAV, c
 - Player names are normalized into `playerKey`.
 - `aavPerc` is parsed as a decimal share, not a percentage string.
 - Implausible `endYearRaw` values are replaced with `startYear + round(term) - 1`.
+- Embedded year rows that are already covered by an earlier multi-year contract with the same player and same team are dropped before contract-history features are created.
 - Previous-contract fields are created within each player by chronological ordering.
-- `prev1Season` and `prev2Season` are always `startYear - 1` and `startYear - 2`.
+- `dateOfSigningObserved` is filled from ESPN transactions when a confident match is found.
+- `featureReferenceDate` is set to the observed signing date when available and otherwise falls back to an offseason proxy date of March 15 of `startYear`.
+- `prev1Season` and `prev2Season` are the two most recent fully completed regular seasons before `featureReferenceDate`, based on `load_schedules()` season end dates.
 
 ## Player Matching
 
@@ -71,7 +80,6 @@ Matching process:
 - Join on normalized `playerKey`.
 - Prefer the candidate with the smallest signing-age gap.
 - Penalize impossible rookie-season matches.
-- Use team agreement only as a weak tie-breaker.
 
 The following fields capture match quality and are retained:
 
@@ -95,7 +103,7 @@ Only rows with `!isEntryLike` are exported to `train`, `validate`, and `test`.
 ### Metadata and contract history
 
 - Contract identifiers: `contractRowId`, `sourceFile`, `playerName`, `playerKey`, `playerId`, `pfrId`
-- Timing and labels: `startYear`, `signedTeam`
+- Timing and labels: `dateOfSigningObserved`, `featureReferenceDate`, `signingDateObserved`, `signingDateSource`, `startYear`, `signedTeam`
 - Biographical inputs: `ageAtSigning`, `birthDate`, `height`, `weight`
 - Combine inputs: `combineForty`, `combineBench`, `combineVertical`, `combineBroadJump`, `combineCone`, `combineShuttle`, `combineAvailable`
 - Draft inputs: `draftYear`, `draftRound`, `draftPick`, `rookieSeason`, `undraftedFlag`
@@ -189,21 +197,22 @@ This keeps zeros reserved for true measured values, except for the intentionally
 
 ## Coverage Snapshot In `train.csv`
 
-- Combine coverage: `49.1%`
-- Any regular-stat history: `62.8%`
-- Two-year regular-stat history: `43.7%`
-- Any snap history: `49.9%`
-- Two-year snap history: `32.1%`
-- Any NGS history: `14.6%`
-- Two-year NGS history: `6.4%`
-- Any team context: `66.3%`
-- Two-year team context: `46.7%`
-- Market context: `100%` for both prior seasons
+- Observed signing-date coverage: `60.1%`
+- Combine coverage: `50.7%`
+- Any regular-stat history: `65.8%`
+- Two-year regular-stat history: `47.3%`
+- Any snap history: `51.3%`
+- Two-year snap history: `34.2%`
+- Any NGS history: `15.8%`
+- Two-year NGS history: `7.1%`
+- Any team context: `68.9%`
+- Two-year team context: `50.1%`
+- Market context: `100.0%` for both prior seasons
 
 ## Modeling Notes
 
 - `contractRowId`, `sourceFile`, `playerName`, `playerKey`, `playerId`, and `pfrId` are identifiers or bookkeeping fields and should be treated as metadata in modeling recipes.
+- `dateOfSigningObserved`, `featureReferenceDate`, `signingDateObserved`, and `signingDateSource` should also be treated as metadata. They are needed to build the historical windows, but they should not be fed into the model matrix.
 - `signedTeam` is retained for auditability but is not known for unsigned `test.csv` rows, so it should not be used as an ex ante predictor unless team-specific scenarios are created intentionally.
 - `aav` is retained for reporting and post-model translation, but it should not be used to predict `aavPerc`.
 - The current files are prepared for a modeling workflow similar to the reference project: split first, then assign ID roles in the recipe, then dummy/novel handling on the remaining predictors.
-
