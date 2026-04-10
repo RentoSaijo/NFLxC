@@ -1,0 +1,2 @@
+modelId,modelFamily,engine,package,status,predictorCount,trainRows,validateRows,fitSeconds,predictSeconds,mnLogLoss,rocAuc,brier,accuracy,mse,rmse,mae,rsq,notes,task,tuningMethod,selectionRule,primaryMetric,cvMetricMean,cvMetricStdErr,foldCount,initialSize,bayesIter,gridSize,mtry,trees,min_n,.config
+term_rf,random_forest,ranger,ranger,ok,500,2795,91,15.029999999999973,0.32799999999997453,0.5445802336616908,0.6691439246263808,0.057317785694612426,0.8131868131868132,NA,NA,NA,NA,NA,term,bayes,best,mn_log_loss,0.7954500544290615,0.02384181019978084,5,10,15,NA,150,485,58,iter03
