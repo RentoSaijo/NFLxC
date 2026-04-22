@@ -132,7 +132,14 @@ loadTaskFrame <- function(task, path) {
   data <- data |>
     dplyr::mutate(
       contractRowId         = as.integer(contractRowId),
+      dateOfSigningObserved = as.Date(dateOfSigningObserved),
+      featureReferenceDate  = as.Date(featureReferenceDate),
+      signingDateObserved   = as.logical(signingDateObserved),
+      signingDateSource     = as.character(signingDateSource),
       startYear             = as.integer(startYear),
+      aav                   = as.numeric(aav),
+      aavPerc               = as.numeric(aavPerc),
+      signedTeam            = as.character(signedTeam),
       draftYear             = as.integer(draftYear),
       draftRound            = as.integer(draftRound),
       draftPick             = as.integer(draftPick),
@@ -141,7 +148,8 @@ loadTaskFrame <- function(task, path) {
       prevContractEndYear   = as.integer(prevContractEndYear),
       prev1Season           = as.integer(prev1Season),
       prev2Season           = as.integer(prev2Season),
-      birthDate             = as.Date(birthDate)
+      birthDate             = as.Date(birthDate),
+      isEntryLike           = as.logical(isEntryLike)
     )
 
   if (task == 'term') {

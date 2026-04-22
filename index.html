@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang='en'>
+  <head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <title>NFL WR Free-Agent Contract Board</title>
+    <meta
+      name='description'
+      content='Interactive NFL wide receiver free-agent contract board built from final term and AAV percentage models.'
+    >
+    <link rel='preconnect' href='https://fonts.googleapis.com'>
+    <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+    <link
+      href='https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap'
+      rel='stylesheet'
+    >
+    <link rel='stylesheet' href='./styles.css'>
+    <script src='https://cdn.plot.ly/plotly-2.35.2.min.js'></script>
+  </head>
+  <body>
+    <div class='page-shell'>
+      <header class='hero'>
+        <div class='hero-copy'>
+          <p class='eyebrow'>2026 veteran wide receiver market</p>
+          <h1>NFL WR Free-Agent Contract Board</h1>
+          <p class='hero-text'>
+            Scenario-first contract projections for unsigned 2026 wide receivers, with a
+            predictive XGBoost stack and an interpretable penalized-regression stack.
+          </p>
+        </div>
+        <div class='hero-stats' id='hero-stats'></div>
+      </header>
+
+      <section class='toolbar'>
+        <div class='toolbar-main'>
+          <div class='page-tabs'>
+            <button class='page-tab is-active' data-panel='player' type='button'>Player Lens</button>
+            <button class='page-tab' data-panel='board' type='button'>Market Board</button>
+            <button class='page-tab' data-panel='method' type='button'>Method</button>
+          </div>
+
+          <div class='toolbar-family toolbar-item'>
+            <p class='toolbar-label'>Model family</p>
+            <div class='pair-toggle' id='pair-toggle'>
+              <button class='pair-button is-active' data-pair='xgb' type='button'>
+                Predictive
+              </button>
+              <button class='pair-button' data-pair='glm' type='button'>
+                Interpretable
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <main class='content-grid'>
+        <section class='card player-card player-header-card panel-card' data-panel='player'>
+          <div class='player-header'>
+            <div class='player-overview'>
+              <div class='player-title-block'>
+                <p class='section-kicker'>Selected player</p>
+                <h2 id='player-name'>Loading...</h2>
+                <p class='player-subtitle' id='player-subtitle'></p>
+              </div>
+              <div class='player-mini-grid' id='player-mini-grid'></div>
+            </div>
+
+            <div class='player-details-block'>
+              <label class='control player-switch-control'>
+                <span>Change player</span>
+                <select id='player-select'></select>
+              </label>
+              <div class='player-summary-grid' id='player-summary-grid'></div>
+            </div>
+          </div>
+        </section>
+
+        <section class='card player-card chart-card panel-card' data-panel='player'>
+          <div class='section-heading'>
+            <div>
+              <p class='section-kicker'>Price path</p>
+              <h2>AAV by term scenario</h2>
+            </div>
+            <p class='section-note'>
+              Marker size and the scenario table below carry the term probabilities.
+            </p>
+          </div>
+          <div class='chart-frame chart-frame-medium' id='scenario-chart'></div>
+        </section>
+
+        <section class='card player-card scenario-card panel-card' data-panel='player'>
+          <div class='section-heading'>
+            <div>
+              <p class='section-kicker'>Scenario pricing</p>
+              <h2>Contract menu</h2>
+            </div>
+            <p class='section-note'>
+              This is the cleanest term view now that the term model is overwhelmingly 1-year for this cohort.
+            </p>
+          </div>
+          <div class='scenario-table-wrap'>
+            <table class='scenario-table'>
+              <thead>
+                <tr>
+                  <th>Term</th>
+                  <th>Prob.</th>
+                  <th>AAV%</th>
+                  <th>AAV</th>
+                </tr>
+              </thead>
+              <tbody id='scenario-body'></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class='card board-card board-chart-card panel-card' data-panel='board'>
+          <div class='section-heading'>
+            <div>
+              <p class='section-kicker'>Market board</p>
+              <h2>1-year probability versus projected price</h2>
+            </div>
+            <p class='section-note'>
+              Since every modal forecast is currently 1 year, the variation that matters is how strongly each player is pinned to that outcome.
+            </p>
+          </div>
+          <div class='chart-frame chart-frame-large' id='market-chart'></div>
+        </section>
+
+        <section class='card board-card board-table-card panel-card' data-panel='board'>
+          <div class='section-heading'>
+            <div>
+              <p class='section-kicker'>Board</p>
+              <h2>Live free-agent ranking</h2>
+            </div>
+            <p class='section-note' id='board-count'></p>
+          </div>
+          <div class='leaderboard-wrap'>
+            <table class='leaderboard'>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Prev</th>
+                  <th>Exp AAV</th>
+                  <th>Likeliest Term</th>
+                  <th>1Y Prob.</th>
+                </tr>
+              </thead>
+              <tbody id='leaderboard-body'></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class='card note-card panel-card' data-panel='method'>
+          <div class='section-heading'>
+            <div>
+              <p class='section-kicker'>Method</p>
+              <h2>What you are looking at</h2>
+            </div>
+          </div>
+          <div class='method-copy' id='method-copy'></div>
+        </section>
+      </main>
+    </div>
+
+    <script type='module' src='./app.js'></script>
+  </body>
+</html>

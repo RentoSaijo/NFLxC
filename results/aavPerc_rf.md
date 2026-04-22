@@ -12,8 +12,8 @@
 - Predictor count after recipe: `504`.
 - Selection rule: `best`.
 - Primary CV metric: `rmse`.
-- Selected CV mean: `0.010546`.
-- Selected CV std. err.: `0.000885`.
+- Selected CV mean: `0.010367`.
+- Selected CV std. err.: `0.000936`.
 - Initial design size: `10`.
 - Bayesian iterations: `15`.
 
@@ -21,31 +21,31 @@
 
 | parameter | value |
 | --- | --- |
-| mtry | 150.000000 |
-| trees | 942.000000 |
-| min_n | 2.000000 |
-| .config | iter04 |
+| mtry | 143.000000 |
+| trees | 978.000000 |
+| min_n | 5.000000 |
+| .config | iter13 |
 
 ## Validate Metrics
 
 | metric | value |
 | --- | --- |
-| rmse | 0.006090 |
-| mae | 0.003062 |
-| mse | 0.00003709 |
-| rsq | 0.879610 |
+| rmse | 0.005975 |
+| mae | 0.003059 |
+| mse | 0.00003570 |
+| rsq | 0.884191 |
 
 ## Top CV Candidates
 
 | mtry | trees | min_n | .metric | .estimator | mean | n | std_err | .config |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 150 |  942 |  2 | rmse | standard | 0.010546 | 5 | 0.000885 | iter04 |
-| 150 | 1572 | 10 | rmse | standard | 0.010546 | 5 | 0.000885 | iter05 |
-| 147 |  326 |  3 | rmse | standard | 0.010546 | 5 | 0.000885 | iter03 |
-| 149 |  737 | 10 | rmse | standard | 0.010546 | 5 | 0.000885 | iter06 |
-| 149 | 1650 |  4 | rmse | standard | 0.010546 | 5 | 0.000885 | iter08 |
-| 150 |  798 | 16 | rmse | standard | 0.010546 | 5 | 0.000885 | iter09 |
-| 123 | 1779 |  3 | rmse | standard | 0.010546 | 5 | 0.000885 | iter07 |
-| 133 |  966 |  8 | rmse | standard | 0.010546 | 5 | 0.000885 | pre0_mod09_post0 |
-| 143 | 1737 |  3 | rmse | standard | 0.010546 | 5 | 0.000885 | iter02 |
-| 101 |  404 |  2 | rmse | standard | 0.010546 | 5 | 0.000885 | iter01 |
+| 143 |  978 | 5 | rmse | standard | 0.010367 | 5 | 0.000936 | iter13 |
+| 143 |  887 | 5 | rmse | standard | 0.010367 | 5 | 0.000936 | iter15 |
+| 140 |  795 | 4 | rmse | standard | 0.010367 | 5 | 0.000936 | iter09 |
+| 143 |  734 | 2 | rmse | standard | 0.010367 | 5 | 0.000936 | iter06 |
+| 141 |  952 | 4 | rmse | standard | 0.010367 | 5 | 0.000936 | iter14 |
+| 138 |  986 | 3 | rmse | standard | 0.010367 | 5 | 0.000936 | iter10 |
+| 123 |  659 | 2 | rmse | standard | 0.010367 | 5 | 0.000936 | iter02 |
+| 149 |  866 | 2 | rmse | standard | 0.010367 | 5 | 0.000936 | iter07 |
+| 140 |  479 | 2 | rmse | standard | 0.010367 | 5 | 0.000936 | iter11 |
+| 142 | 1598 | 2 | rmse | standard | 0.010367 | 5 | 0.000936 | iter03 |
