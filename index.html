@@ -3,10 +3,10 @@
   <head>
     <meta charset='utf-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
-    <title>NFL WR Free-Agent Contract Board</title>
+    <title>NFL WR Contract Projection Dashboard</title>
     <meta
       name='description'
-      content='Interactive NFL wide receiver free-agent contract board built from final term and AAV percentage models.'
+      content='Interactive companion dashboard for NFL wide receiver contract term and cap-share AAV projections.'
     >
     <link rel='preconnect' href='https://fonts.googleapis.com'>
     <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
@@ -22,11 +22,15 @@
       <header class='hero'>
         <div class='hero-copy'>
           <p class='eyebrow'>2026 veteran wide receiver market</p>
-          <h1>NFL WR Free-Agent Contract Board</h1>
+          <h1>NFL WR Contract Projection Dashboard</h1>
           <p class='hero-text'>
-            Scenario-first contract projections for unsigned 2026 wide receivers, with a
-            predictive XGBoost stack and an interpretable penalized-regression stack.
+            A companion to the research paper, built around three questions: how long a
+            veteran wide receiver contract is likely to be, how much annual value it carries
+            as a share of the salary cap, and which player signals help explain those forecasts.
           </p>
+          <div class='hero-actions'>
+            <a class='hero-link' href='./paper.pdf'>Read the paper</a>
+          </div>
         </div>
         <div class='hero-stats' id='hero-stats'></div>
       </header>
@@ -34,9 +38,9 @@
       <section class='toolbar'>
         <div class='toolbar-main'>
           <div class='page-tabs'>
-            <button class='page-tab is-active' data-panel='player' type='button'>Player Lens</button>
+            <button class='page-tab is-active' data-panel='player' type='button'>Player Scenarios</button>
             <button class='page-tab' data-panel='board' type='button'>Market Board</button>
-            <button class='page-tab' data-panel='method' type='button'>Method</button>
+            <button class='page-tab' data-panel='method' type='button'>Model Evidence</button>
           </div>
 
           <div class='toolbar-family toolbar-item'>
@@ -82,7 +86,7 @@
               <h2>AAV by term scenario</h2>
             </div>
             <p class='section-note'>
-              Marker size and the scenario table below carry the term probabilities.
+              The line shows conditional AAV by term. Marker size reflects how likely each term is.
             </p>
           </div>
           <div class='chart-frame chart-frame-medium' id='scenario-chart'></div>
@@ -95,7 +99,7 @@
               <h2>Contract menu</h2>
             </div>
             <p class='section-note'>
-              This is the cleanest term view now that the term model is overwhelmingly 1-year for this cohort.
+              The table keeps the term forecast probabilistic instead of reducing every player to one label.
             </p>
           </div>
           <div class='scenario-table-wrap'>
@@ -120,7 +124,7 @@
               <h2>1-year probability versus projected price</h2>
             </div>
             <p class='section-note'>
-              Since every modal forecast is currently 1 year, the variation that matters is how strongly each player is pinned to that outcome.
+              Every modal forecast is one year, so the useful variation is price and the strength of that one-year probability.
             </p>
           </div>
           <div class='chart-frame chart-frame-large' id='market-chart'></div>
@@ -139,8 +143,8 @@
               <thead>
                 <tr>
                   <th>Player</th>
-                  <th>Prev</th>
-                  <th>Exp AAV</th>
+              <th>Prev</th>
+                  <th>Expected AAV</th>
                   <th>Likeliest Term</th>
                   <th>1Y Prob.</th>
                 </tr>
@@ -154,7 +158,7 @@
           <div class='section-heading'>
             <div>
               <p class='section-kicker'>Method</p>
-              <h2>What you are looking at</h2>
+              <h2>How the projections should be read</h2>
             </div>
           </div>
           <div class='method-copy' id='method-copy'></div>

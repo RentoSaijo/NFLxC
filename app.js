@@ -1,11 +1,11 @@
 const pairMeta = {
   xgb: {
     label: 'Predictive pair',
-    subtitle: 'XGBoost term classifier + XGBoost conditional AAV% regressor',
+    subtitle: 'XGBoost term probabilities + XGBoost conditional cap-share AAV',
   },
   glm: {
     label: 'Interpretable pair',
-    subtitle: 'Lasso multinomial term model + ridge conditional AAV% model',
+    subtitle: 'Lasso term model + ridge conditional cap-share AAV',
   },
 }
 
@@ -214,7 +214,7 @@ const buildHeroStats = (players) => {
     {
       label: 'Active board',
       value: `${players.length}`,
-      sub: `${pairMeta[state.pair].label} for the full unsigned WR board`,
+      sub: `${pairMeta[state.pair].label} for unsigned 2026 wide receivers`,
     },
     {
       label: 'Top expected AAV',
@@ -224,12 +224,12 @@ const buildHeroStats = (players) => {
     {
       label: 'Median 1Y probability',
       value: medianOneYear == null ? 'N/A' : formatShare(medianOneYear, 1),
-      sub: dominantTerm ? `${dominantTerm[1]} of ${players.length} players still have ${termLabel(Number(dominantTerm[0]))} as the modal bucket` : 'No term mix available',
+      sub: dominantTerm ? `${dominantTerm[1]} of ${players.length} players have ${termLabel(Number(dominantTerm[0]))} as the modal term` : 'No term mix available',
     },
     {
       label: 'Cap basis',
       value: `$${formatNumber(capBasis, 1)}M`,
-      sub: 'Implied from signed 2026 contracts',
+      sub: 'Used to translate cap share into dollars',
     },
   ]
 }
@@ -339,7 +339,7 @@ const renderPlayerHeader = (player) => {
     {
       label: 'Previous contract AAV',
       value: formatMoney(priorAav),
-      sub: 'Last veteran deal anchor',
+      sub: 'Last veteran contract price',
     },
     {
       label: 'Previous contract term',
@@ -354,7 +354,7 @@ const renderPlayerHeader = (player) => {
     {
       label: 'Vs WR market',
       value: player.context.prevVsMarketAavPerc != null ? formatSignedPoints(player.context.prevVsMarketAavPerc, 2) : null,
-      sub: 'Previous deal minus veteran WR median',
+      sub: 'Previous deal versus veteran WR median',
     },
   ])
 
@@ -362,7 +362,7 @@ const renderPlayerHeader = (player) => {
     {
       label: 'WR market median',
       value: player.context.marketPrev1MedianAavPerc != null ? formatShare(player.context.marketPrev1MedianAavPerc, 2) : null,
-      sub: 'Prior-year veteran WR market median',
+      sub: 'Recent veteran WR market baseline',
     },
     {
       label: 'Snap share',
@@ -372,7 +372,7 @@ const renderPlayerHeader = (player) => {
     {
       label: 'Weighted targets',
       value: player.context.regWeightedTargets != null ? formatNumber(player.context.regWeightedTargets, 1) : null,
-      sub: 'Two-season weighted opportunity',
+      sub: 'Two-season opportunity signal',
     },
     {
       label: 'Weighted receptions',
@@ -382,7 +382,7 @@ const renderPlayerHeader = (player) => {
     {
       label: 'Weighted yards',
       value: player.context.regWeightedReceivingYards != null ? formatNumber(player.context.regWeightedReceivingYards, 1) : null,
-      sub: 'Two-season weighted receiving output',
+      sub: 'Two-season production signal',
     },
     {
       label: 'Weighted TDs',
@@ -559,16 +559,30 @@ const renderMethod = (players) => {
     `
   }
 
+  const methodIntro = `
+    <article class='method-intro'>
+      <p class='method-block-kicker'>Research frame</p>
+      <h3>Term and price answer different questions.</h3>
+      <p>
+        The dashboard follows the paper's two-model structure. The term model estimates a
+        probability distribution over contract lengths, while the AAV% model prices each
+        supplied term scenario as a share of the salary cap. The predictive pair is the main
+        forecast; the interpretable pair is included to audit feature direction and model behavior.
+      </p>
+    </article>
+  `
+
   els.methodCopy.innerHTML = [
+    methodIntro,
     renderModelBlock(
       methodData.models.term,
       'Term model',
-      `${pairMeta[state.pair].label} term model. ${players.length} unsigned WRs are being scored in the live board, and the target remains the bucketed term outcome.`
+      `${pairMeta[state.pair].label} term model. ${players.length} unsigned WRs are being scored, and the target is the bucketed contract-term outcome.`
     ),
     renderModelBlock(
       methodData.models.aavPerc,
       'AAV% model',
-      `${pairMeta[state.pair].label} conditional price model. It is always interpreted as AAV% given a supplied term scenario, which is why the player view centers the pricing path rather than a single point estimate.`
+      `${pairMeta[state.pair].label} conditional compensation model. It is interpreted as AAV% given a supplied term scenario, which is why the player view centers the full pricing path rather than a single point estimate.`
     ),
   ].join('')
 }
@@ -583,14 +597,14 @@ const plotLayoutBase = {
     size: 14,
   },
   xaxis: {
-    gridcolor: 'rgba(32,49,39,0.08)',
-    zerolinecolor: 'rgba(32,49,39,0.08)',
+    showgrid: false,
+    zeroline: false,
     linecolor: 'rgba(32,49,39,0.12)',
     tickfont: { size: 13 },
   },
   yaxis: {
-    gridcolor: 'rgba(32,49,39,0.08)',
-    zerolinecolor: 'rgba(32,49,39,0.08)',
+    showgrid: false,
+    zeroline: false,
     linecolor: 'rgba(32,49,39,0.12)',
     tickfont: { size: 13 },
   },

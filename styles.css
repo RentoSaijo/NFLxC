@@ -89,6 +89,33 @@ select {
   color: rgba(246, 240, 232, 0.82);
 }
 
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.hero-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 14px;
+  color: #173127;
+  background: #f7efe5;
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 700;
+  border: 1px solid rgba(246, 240, 232, 0.18);
+}
+
+.hero-link-secondary {
+  color: #f7efe5;
+  background: rgba(246, 240, 232, 0.08);
+}
+
 .hero-stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -550,11 +577,16 @@ select {
   gap: 16px;
 }
 
+.method-intro,
 .method-block {
   padding: 20px;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.54);
   border: 1px solid rgba(32, 49, 39, 0.08);
+}
+
+.method-intro {
+  grid-column: 1 / -1;
 }
 
 .method-block h3 {
@@ -564,6 +596,14 @@ select {
   color: var(--heading);
 }
 
+.method-intro h3 {
+  margin: 0 0 10px;
+  font-family: 'Fraunces', serif;
+  font-size: 1.5rem;
+  color: var(--heading);
+}
+
+.method-intro p,
 .method-block p {
   margin: 0;
   color: var(--text-muted);
