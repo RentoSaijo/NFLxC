@@ -9,3 +9,5 @@
 *.log
 *.out
 *.synctex.gz
+presentation_workspaces/
+scratch/
