@@ -1,12 +1,9 @@
 ---
-title: |
-  STA 336: Statistical Machine Learning
-subtitle: |
-  NFL Wide Receiver Contract Projection
-author: |
-  Rento Saijo, Atticus Roop, and Manahil Shoaib
-date: 'May 1, 2026'
-fontsize: 11pt
+title: "Projecting NFL Wide Receiver Contracts"
+subtitle: "Term Probabilities and Cap-Share Price for the 2026 Veteran Market"
+author: "Rento Saijo, Atticus Roop, and Manahil Shoaib"
+date: "May 1, 2026"
+fontsize: 10pt
 documentclass: article
 geometry: top=1in, bottom=1in, left=1in, right=1in
 urlcolor: blue
@@ -18,8 +15,8 @@ output:
   bookdown::pdf_document2:
     keep_tex: true
     toc: false
-    fig_width: 6.5
-    fig_height: 4
+    fig_width: 6.4
+    fig_height: 3.1
     fig_caption: true
 
 header-includes:
@@ -28,127 +25,69 @@ header-includes:
     \usepackage{hyperref}
     \hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue}
     \usepackage{float}
-    \usepackage{fvextra}
+    \usepackage{booktabs}
+    \usepackage{caption}
+    \usepackage{enumitem}
     \usepackage{fancyhdr}
     \usepackage{lastpage}
-    \usepackage{soul}
-    \usepackage{etoolbox}
     \usepackage{microtype}
-    \usepackage{tcolorbox}
-    \usepackage{enumitem}
-    \usepackage{fancyvrb}
-    \usepackage{xspace}
-    \allowdisplaybreaks
-    \setcounter{tocdepth}{2}
+    \usepackage{titlesec}
+    \usepackage{fvextra}
     \setcounter{secnumdepth}{0}
     \floatplacement{figure}{H}
+    \floatplacement{table}{H}
+    \captionsetup{font=footnotesize, labelfont=bf}
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{0.25em}
+    \setlist{nosep,leftmargin=*}
+    \titlespacing*{\section}{0pt}{0.58em}{0.2em}
+    \titlespacing*{\subsection}{0pt}{0.48em}{0.18em}
+    \titleformat{\section}{\large\bfseries}{\thesection}{0.5em}{}
+    \titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
     \makeatletter
     \newcommand{\@subtitle}{}
     \newcommand{\subtitle}[1]{\gdef\@subtitle{#1}}
-    \newcommand{\DocSubtitle}{\@subtitle}
     \renewcommand{\maketitle}{
       \thispagestyle{plain}
-      \null
-      \vfill
       \begin{center}
-        {\Large \textsc{\@title} \par}\vskip 0.5em
-        {\LARGE \bfseries \@subtitle \par}\vskip 0.75em
-        {\large \@author \par}\vskip 0.5em
-        {\normalsize \@date \par}
+        {\Large\bfseries \@title \par}
+        \vspace{0.12em}
+        {\normalsize \@subtitle \par}
+        \vspace{0.2em}
+        {\normalsize \@author \par}
+        \vspace{0.18em}
+        {\small \@date \par}
       \end{center}
-      \vfill
-      \clearpage
+      \vspace{0.2em}
     }
-    \AfterEndEnvironment{Highlighting}{\setcounter{CodeLine}{\numexpr\value{CodeLine}+\FV@CodeLineNo\relax}}
     \makeatother
     \fancypagestyle{plain}{
       \fancyhf{}
       \renewcommand{\headrulewidth}{0pt}
       \renewcommand{\footrulewidth}{0pt}
+      \fancyfoot[C]{\small Page~\thepage~of~\pageref{LastPage}}
     }
     \pagestyle{fancy}
     \fancyhf{}
-    \setlength{\headheight}{14pt}
-    \fancyfoot[C]{\small\textsc{Page}~\thepage~\textsc{of}~\pageref{LastPage}}
-    \fancyhead[L]{\textsc{Saijo, Roop, and Shoaib}}
-    \fancyhead[R]{\textsc{NFL WR Contract Projection}}
-    \fancyhead[C]{}
-    \renewcommand{\headrulewidth}{0.5pt}
-    \renewcommand{\footrulewidth}{0.5pt}
-    \newcounter{CodeLine}
-    \newcounter{cell}
-    \AtBeginEnvironment{Highlighting}{\stepcounter{cell}}
-    \DefineVerbatimEnvironment{Highlighting}{Verbatim}{
-      frame=single,
-      rulecolor=\color{black},
-      framesep=2mm,
-      label=\footnotesize\textbf{Cell \thecell},
-      labelposition=topline,
-      commandchars=\\\{\},
-      breaklines=true,
-      breakanywhere=false,
-      breaksymbol={},
-      numbers=left,
-      numbersep=3pt,
-      firstnumber=\numexpr\value{CodeLine}+1\relax,
-      fontsize=\small
-    }
-    \DefineVerbatimEnvironment{verbatim}{Verbatim}{
-      breaklines=true,
-      breakanywhere=true,
-      numbers=left,
-      numbersep=3pt,
-      firstnumber=1,
-      fontsize=\footnotesize
-    }
-    \DefineVerbatimEnvironment{snippet}{Verbatim}{
-      breaklines=true,
-      breakanywhere=true,
-      fontsize=\footnotesize,
-      frame=single,
-      listparameters=\setlength{\topsep}{\baselineskip}\setlength{\partopsep}{0pt}
-    }
-    \newtcolorbox{problem}[1][]{
-      title={\textsc{#1}}
-    }
-    \newenvironment{alphenum}{
-      \begin{enumerate}[
-        label=(\alph*),
-        itemsep=3pt,
-        parsep=0pt,
-        topsep=6pt
-      ]
-    }{
-      \end{enumerate}
-    }
-    \newenvironment{items}{
-      \begin{itemize}[
-        itemsep=3pt,
-        parsep=0pt,
-        topsep=6pt
-      ]
-    }{
-      \end{itemize}
-    }
-    \renewcommand{\contentsname}{Table of Contents}
-    \newcommand{\E}{\mathrm{E}}
-    \newcommand{\Var}{\mathrm{Var}}
-    \newcommand{\R}{\textsf{R}\xspace}
-    \newcommand{\SD}{\mathrm{SD}}
-    \newcommand{\SE}{\mathrm{SE}}
+    \setlength{\headheight}{13pt}
+    \fancyhead[L]{\small Saijo, Roop, and Shoaib}
+    \fancyhead[R]{\small NFL WR Contract Projection}
+    \fancyfoot[C]{\small Page~\thepage~of~\pageref{LastPage}}
+    \renewcommand{\headrulewidth}{0.35pt}
+    \renewcommand{\footrulewidth}{0.35pt}
+    \sloppy
 ---
 
 ```{r setup, include = FALSE}
-# ----- Setup ----- #
-
 knitr::opts_chunk$set(
-  echo       = FALSE,
-  warning    = FALSE,
-  message    = FALSE,
-  fig.align  = 'center',
-  fig.pos    = 'H',
-  out.width  = '\\linewidth'
+  echo      = FALSE,
+  warning   = FALSE,
+  message   = FALSE,
+  fig.align = 'center',
+  fig.pos   = 'H',
+  out.width = '\\linewidth'
 )
+
 options(width = 125)
 options(scipen = 999)
 
@@ -157,6 +96,7 @@ suppressMessages(library(forcats))
 suppressMessages(library(ggplot2))
 suppressMessages(library(knitr))
 suppressMessages(library(kableExtra))
+suppressMessages(library(patchwork))
 suppressMessages(library(readr))
 suppressMessages(library(scales))
 suppressMessages(library(stringr))
@@ -188,15 +128,15 @@ if (requireNamespace('sysfonts', quietly = TRUE) &&
 }
 
 theme_set(
-  theme_minimal(base_family = base_family, base_size = 10) +
+  theme_minimal(base_family = base_family, base_size = 9) +
     theme(
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
-      axis.line = element_line(linewidth = 0.25, color = 'grey35')
+      axis.line = element_line(linewidth = 0.25, color = 'grey35'),
+      plot.title = element_text(face = 'bold', size = 10),
+      strip.text = element_text(face = 'bold', size = 8.5)
     )
 )
-
-# ----- Helpers ----- #
 
 table_latex <- function(
   data,
@@ -206,11 +146,12 @@ table_latex <- function(
   align      = NULL,
   wrap_col   = NULL,
   wrap_width = NULL,
-  font_size  = 8
+  font_size  = 7.5
 ) {
   if (is.null(align)) {
     align <- rep('c', ncol(data))
   }
+
   table_out <- knitr::kable(
     data,
     format    = 'latex',
@@ -221,15 +162,18 @@ table_latex <- function(
     linesep   = '',
     align     = align
   )
+
   table_out <- kableExtra::kable_styling(
     table_out,
     position      = 'center',
-    latex_options = c('HOLD_position'),
+    latex_options = c('HOLD_position', 'scale_down'),
     font_size     = font_size
   )
+
   if (!is.null(wrap_col) && !is.null(wrap_width)) {
     table_out <- kableExtra::column_spec(table_out, wrap_col, width = wrap_width)
   }
+
   table_out
 }
 
@@ -238,11 +182,19 @@ comma_num <- function(x, digits = 0) {
 }
 
 pct_num <- function(x, digits = 1) {
-  paste0(format(round(100 * x, digits), nsmall = digits), '%')
+  paste0(format(round(100 * x, digits), nsmall = digits), '\\%')
 }
 
 money_m <- function(x, digits = 2) {
-  paste0('$', format(round(x, digits), nsmall = digits), 'M')
+  paste0('\\$', format(round(x, digits), nsmall = digits), 'M')
+}
+
+pct_cell <- function(x, digits = 1) {
+  paste0(format(round(100 * x, digits), nsmall = digits, trim = TRUE), '%')
+}
+
+money_cell <- function(x, digits = 2) {
+  paste0('$', format(round(x, digits), nsmall = digits, trim = TRUE), 'M')
 }
 
 clean_feature <- function(x) {
@@ -252,10 +204,10 @@ clean_feature <- function(x) {
     str_replace_all('Prev1', 'Previous 1 ') |>
     str_replace_all('Prev2', 'Previous 2 ') |>
     str_replace_all('Weighted', 'Weighted ') |>
+    str_replace_all('Aav', 'AAV') |>
+    str_replace_all('Perc', 'Percent') |>
     str_squish()
 }
-
-# ----- Data ----- #
 
 train_data    <- read_csv('data/train.csv', show_col_types = FALSE)
 validate_data <- read_csv('data/validate.csv', show_col_types = FALSE)
@@ -271,46 +223,42 @@ summary_glm   <- read_csv('final/summary_glm.csv', show_col_types = FALSE)
 scenarios_xgb <- read_csv('final/scenarios_xgb.csv', show_col_types = FALSE)
 scenarios_glm <- read_csv('final/scenarios_glm.csv', show_col_types = FALSE)
 
-term_xgb_imp  <- read_csv('models/term_xgb_final_importance.csv', show_col_types = FALSE)
-aav_xgb_imp   <- read_csv('models/aavPerc_xgb_final_importance.csv', show_col_types = FALSE)
-term_ll_coef  <- read_csv('models/term_ll_final_coefficients.csv', show_col_types = FALSE)
-aav_rl_coef   <- read_csv('models/aavPerc_rl_final_coefficients.csv', show_col_types = FALSE)
+term_xgb_imp <- read_csv('models/term_xgb_final_importance.csv', show_col_types = FALSE)
+aav_xgb_imp  <- read_csv('models/aavPerc_xgb_final_importance.csv', show_col_types = FALSE)
+term_ll_coef <- read_csv('models/term_ll_final_coefficients.csv', show_col_types = FALSE)
+aav_rl_coef  <- read_csv('models/aavPerc_rl_final_coefficients.csv', show_col_types = FALSE)
 
-term_xgb_model <- readRDS('models/term_xgb_final.rds')
-aav_xgb_model  <- readRDS('models/aavPerc_xgb_final.rds')
+term_xgb_row <- term_opt |> filter(modelId == 'term_xgb') |> slice(1)
+term_ll_row  <- term_opt |> filter(modelId == 'term_ll') |> slice(1)
+aav_xgb_row  <- aav_opt |> filter(modelId == 'aavPerc_xgb') |> slice(1)
+aav_rl_row   <- aav_opt |> filter(modelId == 'aavPerc_rl') |> slice(1)
 
 split_tbl <- tibble(
-  split = c('Train', 'Validate', 'Test'),
-  role = c(
-    'Historical signed contracts used for fitting and tuning',
-    'Signed 2026 contracts used for held-out model comparison',
-    'Unsigned 2026 free-agent candidates scored by the final models'
+  Split = c('Train', 'Validate', 'Test'),
+  Role = c(
+    'Signed veteran WR contracts used for fitting and tuning',
+    'Signed 2026 veteran WR contracts used for held-out evaluation',
+    'Unsigned 2026 WR free agents scored by the final models'
   ),
-  rows = c(nrow(train_data), nrow(validate_data), nrow(test_data)),
-  players = c(
+  Rows = c(nrow(train_data), nrow(validate_data), nrow(test_data)),
+  Players = c(
     n_distinct(train_data$playerName),
     n_distinct(validate_data$playerName),
     n_distinct(test_data$playerName)
   ),
-  start_years = c(
+  Years = c(
     paste0(min(train_data$startYear), '-', max(train_data$startYear)),
     as.character(unique(validate_data$startYear)),
     as.character(unique(test_data$startYear))
   )
 )
 
-term_dist_tbl <- bind_rows(
-  train_data |> mutate(split = 'Train'),
-  validate_data |> mutate(split = 'Validate')
-) |>
-  count(split, term) |>
-  group_by(split) |>
-  mutate(pct = n / sum(n)) |>
-  ungroup()
-
 coverage_tbl <- tibble(
-  family = c('Observed ESPN signing date', 'NFL combine', 'Regular receiving stats', 'Snap usage', 'Next Gen receiving', 'Team context', 'Market context'),
-  train_coverage = c(
+  `Feature Family` = c(
+    'Observed ESPN signing date', 'NFL combine', 'Regular receiving stats',
+    'Snap usage', 'Next Gen receiving', 'Team context', 'Market context'
+  ),
+  `Training Coverage` = c(
     mean(!is.na(train_data$dateOfSigningObserved)),
     mean(train_data$combineAvailable %in% TRUE, na.rm = TRUE),
     mean(train_data$regPrev1Available | train_data$regPrev2Available, na.rm = TRUE),
@@ -321,294 +269,148 @@ coverage_tbl <- tibble(
   )
 )
 
+split_levels <- c('Training contracts', 'Signed 2026 validation')
+term_levels_display <- c('1', '2', '3', '4', '5+')
+
+term_dist_tbl <- bind_rows(
+  train_data |> mutate(split = split_levels[[1]]),
+  validate_data |> mutate(split = split_levels[[2]])
+) |>
+  mutate(
+    split = factor(split, levels = split_levels),
+    term_label = factor(if_else(term == 5, '5+', as.character(term)), levels = term_levels_display)
+  ) |>
+  count(split, term_label) |>
+  group_by(split) |>
+  mutate(pct = n / sum(n)) |>
+  ungroup()
+
+eda_plot_data <- bind_rows(
+  train_data |> mutate(split = split_levels[[1]]),
+  validate_data |> mutate(split = split_levels[[2]])
+) |>
+  mutate(
+    split = factor(split, levels = split_levels),
+    term_label = factor(if_else(term == 5, '5+', as.character(term)), levels = term_levels_display)
+  ) |>
+  filter(!is.na(term_label), !is.na(aavPerc))
+
+term_mix_plot_data <- term_dist_tbl |>
+  mutate(
+    panel = factor('Term mix', levels = c('Term mix', 'AAV% by term')),
+    value = pct,
+    label = paste0(n, '\n', round(100 * pct), '%')
+  )
+
+aav_plot_data <- eda_plot_data |>
+  mutate(
+    panel = factor('AAV% by term', levels = c('Term mix', 'AAV% by term')),
+    value = aavPerc
+  )
+
+source_tbl <- tibble(
+  Source = c(
+    'Spotrac WR contract exports',
+    'nflreadr player, roster, combine, stats, snap, NGS, team, and schedule data',
+    'ESPN NFL transactions API',
+    'Derived market context'
+  ),
+  `Role in Project` = c(
+    'Contract spine: player, team, start/end years, term, value, AAV, AAV%, age, guarantees/bonuses for parsing.',
+    'Public pre-signing player identity, athletic profile, production, usage, receiver-tracking, team offense, and season-calendar context.',
+    'Observed or likely signing dates used to reduce temporal leakage in prior-season feature windows.',
+    'Rolling veteran WR market anchors from prior local contract records: count, median term, AAV, AAV%, p75 AAV%, and signing age.'
+  )
+)
+
+response_tbl <- tibble(
+  Response = c('term', 'aavPerc'),
+  Definition = c(
+    'Reported contract length in years; deals of five or more years are grouped into the 5+ class.',
+    'Average annual value divided by league salary cap at signing, modeled as a decimal share.'
+  ),
+  `Why This Target` = c(
+    'Represents team commitment and player leverage; treated as a probability distribution because one-year deals dominate the validation market.',
+    'Normalizes dollars across eras and gives a price target that can be translated back to 2026 dollars.'
+  )
+)
+
+cleaning_tbl <- tibble(
+  Step = c(
+    'Contract parsing',
+    'Embedded-row removal',
+    'Entry-like filtering',
+    'Player matching',
+    'Signing-date reference',
+    'Prior-season windows',
+    'Missing-data policy'
+  ),
+  `Implementation Detail` = c(
+    'Row-bind WR contract files, standardize names/teams, parse numeric economics, convert AAV% to cap share, and repair inconsistent end years with startYear + term - 1.',
+    'Drop yearly rows already covered by an earlier multi-year deal for the same player/team before building contract-history variables.',
+    'Exclude contracts at rookieSeason or first observed contracts with ageAtSigning <= 23 to avoid mixing rookie-scale economics with veteran pricing.',
+    'Join normalized contract names to nflverse player references, then prefer candidates by signing-age gap, rookie-season plausibility, roster backfill, and position context.',
+    'Use matched ESPN transaction dates when available; otherwise use an explicit March 15 offseason proxy for the contract start year.',
+    'Use the two most recent fully completed regular seasons before the reference date, not a mechanical startYear - 1 / startYear - 2 rule.',
+    'Keep raw missing season fields as NA, collapse weighted values to the observed season when only one year exists, set missing deltas to 0, and retain availability flags.'
+  )
+)
+
+recipe_tbl <- tibble(
+  Component = c(
+    'Shared exclusions',
+    'Term-specific exclusions',
+    'AAV%-specific exclusions',
+    'Categorical preprocessing',
+    'Numeric preprocessing',
+    'Resampling and tuning metrics'
+  ),
+  `Modeling Choice` = c(
+    'Identifiers, audit dates, signing-team label, and current-contract bookkeeping fields are not predictors.',
+    'Current-contract AAV and AAV% are removed to prevent direct target leakage.',
+    'Current-contract AAV is removed; term remains because the final scorer prices each supplied term scenario.',
+    'Convert strings to factors, handle unknown and novel levels, mode-impute, and dummy encode.',
+    'Median-impute, remove zero-variance predictors, and normalize.',
+    'Use grouped five-fold cross-validation by playerId; optimize multinomial log loss for term and RMSE for AAV%.'
+  )
+)
+
 opt_tbl <- bind_rows(
   term_opt |>
     transmute(
-      task = 'Term',
-      model = dplyr::case_when(
+      Task = 'Term',
+      Model = case_when(
         modelId == 'term_xgb' ~ 'XGBoost',
         modelId == 'term_rf'  ~ 'Random forest',
         modelId == 'term_ll'  ~ 'Lasso multinomial',
         TRUE ~ modelId
       ),
-      metric_1 = sprintf('Log loss = %.3f', mnLogLoss),
-      metric_2 = sprintf('Brier = %.3f', brier),
-      metric_3 = sprintf('Accuracy = %.1f%%', 100 * accuracy),
-      cv_metric = sprintf('CV log loss = %.3f', cvMetricMean)
+      `Metric 1` = sprintf('Log loss %.3f', mnLogLoss),
+      `Metric 2` = sprintf('Brier %.3f', brier),
+      `Metric 3` = sprintf('Accuracy %.1f%%', 100 * accuracy),
+      `CV Metric` = sprintf('CV log loss %.3f', cvMetricMean)
     ),
   aav_opt |>
     transmute(
-      task = 'AAV%',
-      model = dplyr::case_when(
+      Task = 'AAV%',
+      Model = case_when(
         modelId == 'aavPerc_xgb' ~ 'XGBoost',
         modelId == 'aavPerc_rf'  ~ 'Random forest',
         modelId == 'aavPerc_rl'  ~ 'Ridge linear',
         TRUE ~ modelId
       ),
-      metric_1 = sprintf('RMSE = %.4f', rmse),
-      metric_2 = sprintf('MAE = %.4f', mae),
-      metric_3 = sprintf('R-squared = %.3f', rsq),
-      cv_metric = sprintf('CV RMSE = %.4f', cvMetricMean)
+      `Metric 1` = sprintf('RMSE %.4f', rmse),
+      `Metric 2` = sprintf('MAE %.4f', mae),
+      `Metric 3` = sprintf('R-squared %.3f', rsq),
+      `CV Metric` = sprintf('CV RMSE %.4f', cvMetricMean)
     )
 )
 
-top_projection_tbl <- summary_xgb |>
-  arrange(desc(expectedAavMillions)) |>
-  transmute(
-    Player = playerName,
-    Age = ageAtSigning,
-    `Previous Team` = prevSignedTeam,
-    `Expected Term` = round(expectedTerm, 2),
-    `P(1 Year)` = pct_num(.pred_1, 1),
-    `P(2+ Years)` = pct_num(.pred_2 + .pred_3 + .pred_4 + .pred_5, 1),
-    `Expected AAV` = money_m(expectedAavMillions, 2),
-    `Modal AAV` = money_m(modalAavMillions, 2)
-  ) |>
-  slice_head(n = 10)
-
-main_projection_tbl <- top_projection_tbl |>
-  slice_head(n = 6)
-
-compact_projection_tbl <- summary_xgb |>
-  arrange(desc(expectedAavMillions)) |>
-  transmute(
-    Player = playerName,
-    `Expected Term` = round(expectedTerm, 2),
-    `P(1 Year)` = pct_num(.pred_1, 1),
-    `P(2+ Years)` = pct_num(.pred_2 + .pred_3 + .pred_4 + .pred_5, 1),
-    `Expected AAV` = money_m(expectedAavMillions, 2)
-  ) |>
-  slice_head(n = 5)
-
-main_summary_tbl <- tibble(
-  Component = c(
-    'Training data',
-    'Validation data',
-    'Scored 2026 market',
-    'Best term model',
-    'Best compensation model',
-    'Market-level forecast'
-  ),
-  Evidence = c(
-    paste0(comma_num(nrow(train_data)), ' signed veteran WR contracts from ', min(train_data$startYear), '-', max(train_data$startYear)),
-    paste0(nrow(validate_data), ' signed 2026 contracts; ', pct_num(mean(validate_data$term == 1), 1), ' were one-year deals'),
-    paste0(nrow(test_data), ' unsigned 2026 WR free agents'),
-    'XGBoost with log loss 0.537, Brier 0.057, accuracy 82.4%',
-    'XGBoost with RMSE 0.0057, MAE 0.0026, R-squared 0.903',
-    paste0('Mean one-year probability ', pct_num(mean(summary_xgb$.pred_1), 1), '; median expected AAV ', money_m(median(summary_xgb$expectedAavMillions), 2))
-  )
-)
-
-baseline_lookup <- bind_rows(
-  term_baseline |>
-    transmute(
-      task = 'Term',
-      model_id = modelId,
-      log_loss = mnLogLoss,
-      brier = brier,
-      accuracy = accuracy,
-      rmse = NA_real_,
-      mae = NA_real_,
-      rsq = NA_real_
-    ),
-  aav_baseline |>
-    transmute(
-      task = 'AAV%',
-      model_id = modelId,
-      log_loss = NA_real_,
-      brier = NA_real_,
-      accuracy = NA_real_,
-      rmse = rmse,
-      mae = mae,
-      rsq = rsq
-    )
-)
-
-baseline_screen_tbl <- tibble(
-  Task = c('Term', 'Term', 'AAV%', 'AAV%'),
-  Role = c('Predictive', 'Interpretable', 'Predictive', 'Interpretable'),
-  `Best Untuned Baseline` = c('XGBoost', 'Lasso', 'XGBoost', 'Ridge'),
-  `Validation Evidence` = c(
-    sprintf(
-      'Log loss %.3f; Brier %.3f; acc. %.1f%%',
-      baseline_lookup$log_loss[baseline_lookup$task == 'Term' & baseline_lookup$model_id == 'xgboost'],
-      baseline_lookup$brier[baseline_lookup$task == 'Term' & baseline_lookup$model_id == 'xgboost'],
-      100 * baseline_lookup$accuracy[baseline_lookup$task == 'Term' & baseline_lookup$model_id == 'xgboost']
-    ),
-    sprintf(
-      'Log loss %.3f; Brier %.3f; acc. %.1f%%',
-      baseline_lookup$log_loss[baseline_lookup$task == 'Term' & baseline_lookup$model_id == 'lasso_glmnet'],
-      baseline_lookup$brier[baseline_lookup$task == 'Term' & baseline_lookup$model_id == 'lasso_glmnet'],
-      100 * baseline_lookup$accuracy[baseline_lookup$task == 'Term' & baseline_lookup$model_id == 'lasso_glmnet']
-    ),
-    sprintf(
-      'RMSE %.4f; MAE %.4f; R-squared %.3f',
-      baseline_lookup$rmse[baseline_lookup$task == 'AAV%' & baseline_lookup$model_id == 'xgboost'],
-      baseline_lookup$mae[baseline_lookup$task == 'AAV%' & baseline_lookup$model_id == 'xgboost'],
-      baseline_lookup$rsq[baseline_lookup$task == 'AAV%' & baseline_lookup$model_id == 'xgboost']
-    ),
-    sprintf(
-      'RMSE %.4f; MAE %.4f; R-squared %.3f',
-      baseline_lookup$rmse[baseline_lookup$task == 'AAV%' & baseline_lookup$model_id == 'ridge_glmnet'],
-      baseline_lookup$mae[baseline_lookup$task == 'AAV%' & baseline_lookup$model_id == 'ridge_glmnet'],
-      baseline_lookup$rsq[baseline_lookup$task == 'AAV%' & baseline_lookup$model_id == 'ridge_glmnet']
-    )
-  )
-)
-
-xgb_summary_stats <- summary_xgb |>
-  summarise(
-    mean_expected_term = mean(expectedTerm),
-    median_expected_term = median(expectedTerm),
-    max_expected_term = max(expectedTerm),
-    mean_expected_aav = mean(expectedAavMillions),
-    median_expected_aav = median(expectedAavMillions),
-    max_expected_aav = max(expectedAavMillions),
-    mean_p1 = mean(.pred_1),
-    mean_p3plus = mean(.pred_3 + .pred_4 + .pred_5)
-  )
-
-dashboard_url <- 'https://rentosaijo.github.io/NFLxC/'
-```
-
-# Abstract
-
-This project studies whether public data can support useful projections for the 2026 veteran wide receiver contract market. The central questions are whether contract term can be predicted, whether annual average value (AAV) can be predicted as a percentage of the NFL salary cap, and which player, contract, production, and market factors appear most important in those predictions. The analysis uses Spotrac wide receiver contract exports as the contract spine and enriches those records with nflverse player, roster, combine, production, snap, Next Gen Stats, team, and schedule data, plus ESPN transaction dates when a likely signing match is available [@spotrac; @nflreadr; @espntransactions]. The modeling design separates contract term from annual price because the two outcomes represent different market decisions. Term measures commitment, while cap-share AAV measures price conditional on that commitment. The strongest predictive pair uses XGBoost for both tasks [@xgboost], while lasso multinomial logistic regression and ridge regression provide interpretable audit models [@glmnet]. On the signed 2026 validation set, the selected term model achieved log loss of 0.537, Brier score of 0.057, and accuracy of 82.4%; the selected compensation model achieved RMSE of 0.0057, MAE of 0.0026, and \(R^2\) of 0.903. Applied to `r nrow(test_data)` unsigned 2026 wide receivers, the model projects a short-term market where every scored player has a modal one-year contract, the mean one-year probability is `r pct_num(xgb_summary_stats$mean_p1, 1)`, and the median expected annual value is `r money_m(xgb_summary_stats$median_expected_aav, 2)`. Player-level scenario outputs are available in the \href{https://rentosaijo.github.io/NFLxC/}{companion dashboard}.
-
-\newpage
-
-# Introduction and Background
-
-NFL wide receiver contracts are difficult to compare because the headline value of a deal hides several distinct market decisions. A one-year prove-it contract, a two-year role-player contract, and a four-year star extension can all belong to the same position group, yet they imply different levels of team commitment and player leverage. For readers less familiar with football, a wide receiver is an offensive player whose primary role is to catch passes. Contract term is the reported number of contract years, and average annual value, or AAV, is total reported value divided by term. Because the NFL salary cap changes substantially over time, this project models AAV as a share of the league cap at signing rather than as raw dollars. An annual salary of \(\$10\) million carries different meaning under a league cap of \(\$120\) million than under a league cap of \(\$300\) million, so cap share gives a cleaner cross-era target. Rookie and rookie-adjacent deals are excluded because they are governed by a different pricing mechanism; keeping them in the same sample would mix the veteran free-agent market with the rookie wage scale.
-
-The project is organized around three research questions. Can the term of a veteran wide receiver contract be predicted from public information available before signing? Can the contract's AAV as a percentage of the salary cap be predicted with useful accuracy? Which contract-history, career-stage, production, team-context, and market variables explain those predictions? These questions are significant because public contract projections are usually presented as single dollar values, while actual negotiations are closer to menus of possible terms and prices. This motivates the two-model architecture used throughout the project. The term model estimates probabilities over one, two, three, four, and five-or-more-year outcomes, and the compensation model estimates cap-share AAV under each supplied term scenario. The final output is therefore a probability-weighted set of contract paths rather than only a ranked list of dollar forecasts.
-
-# Data and Methods
-
-The contract outcome data come from Spotrac wide receiver contract exports grouped by decade [@spotrac]. Those exports provide player names, teams, signing ages, start and end years, reported term, total value, average salary, cap share at signing, and guarantee-related fields. The contract records are enriched with nflverse player references, rosters, combine measurements, regular receiving statistics, snap counts, Next Gen receiving metrics, team offensive context, and schedules through `nflreadr` [@nflreadr]. ESPN transaction data are used to recover signing dates when possible [@espntransactions] so each contract uses only information available before signing; unmatched dates use a March 15 offseason proxy that is recorded in the data. After cleaning, the modeling universe contains `r comma_num(nrow(train_data))` signed veteran contracts from `r min(train_data$startYear)`-`r max(train_data$startYear)`, `r nrow(validate_data)` signed 2026 validation contracts, and `r nrow(test_data)` unsigned 2026 free-agent candidates.
-
-Cleaning is designed so that each row represents one veteran contract and each predictor describes the player before signing. The workflow standardizes names, parses contract economics, converts AAV percent to decimal cap share, repairs implausible end years, removes yearly rows already covered by an earlier multi-year deal, and builds prior-contract features. Player matching uses normalized names, age, rookie-season plausibility, roster history, and position context. Recent performance is based on the two most recent fully completed seasons before signing, with the most recent season weighted twice as heavily and missingness tracked with availability indicators rather than treated as a real zero.
-
-The modeling recipe is implemented with tidymodels [@tidymodels]. Identifiers, audit fields, signing team, and current-contract information are excluded because they would either leak the answer or fail to generalize to unsigned players. Preprocessing handles unknown and new categorical levels, imputes missing predictors, removes zero-variance terms, and normalizes numeric inputs. The term model predicts one, two, three, four, or five-plus years, with longer contracts grouped together because they are rare. The compensation model predicts cap-share AAV under a supplied term scenario. Model selection begins with an untuned baseline screen. The predictive side covers random forest, XGBoost, LightGBM, and neural networks. The interpretable side covers multinomial logistic regression for term, ordinary linear regression for AAV%, ridge, lasso, elastic net, decision trees, and null models. Table \@ref(tab:baseline-screen) summarizes the best baseline result in each task-by-model-role lane. We then fine-tune XGBoost for both predictive tasks, lasso multinomial regression for term, and ridge regression for AAV%. Model selection uses 2002-2025 contracts for training and signed 2026 contracts for validation, with five grouped folds by player used during tuning so the same player's contract history does not leak across folds.
-
-```{r baseline-screen-table, results = 'asis'}
-baseline_screen_tbl |>
-  table_latex(
-    col_names = c('Task', 'Model Role', 'Best Baseline', 'Validation Evidence'),
-    caption = '(\\#tab:baseline-screen) Best untuned baseline results by task and model role.',
-    align = c('l', 'l', 'l', 'l'),
-    wrap_col = 4,
-    wrap_width = '2.35in',
-    font_size = 6.5
-  )
-```
-
-# Results and Discussion
-
-Figure \@ref(fig:market-scatter) shows the main forecast pattern. The term task has to be evaluated carefully because the signed 2026 validation set is heavily concentrated in one-year contracts. A model can look accurate by predicting one year for nearly everyone, but that does not mean its probabilities are calibrated or useful for comparing players. For that reason, the selected term model is judged primarily with log loss and Brier score, which reward better probability estimates. After tuning, the selected XGBoost term model improves to log loss 0.537 and Brier 0.057, while the selected XGBoost compensation model explains most held-out variation in cap-share AAV. Its RMSE of 0.0057 represents about 0.57 percentage points of the cap, or roughly \(\$1.7\) million at the implied 2026 cap. The first research question therefore receives a qualified answer: contract term can be predicted, but a probability distribution over terms is more useful than a single predicted class. The second research question has a clearer answer: cap-share AAV is meaningfully predictable once the model conditions on term.
-
-The unsigned 2026 wide receiver group is projected to be overwhelmingly short-term. All `r nrow(summary_xgb)` scored players have one year as their modal term, and the average one-year probability is `r pct_num(xgb_summary_stats$mean_p1, 1)`. Price is less compressed than term. The mean expected AAV is `r money_m(xgb_summary_stats$mean_expected_aav, 2)`, the median is `r money_m(xgb_summary_stats$median_expected_aav, 2)`, and the maximum is `r money_m(xgb_summary_stats$max_expected_aav, 2)`, so the projected market is right-skewed. Deebo Samuel, Jauan Jennings, and Keenan Allen rise to the top because they combine stronger recent or prior production signals with nontrivial probabilities of multi-year outcomes. Even for those players, however, the modal forecast remains one year. Their expected values should be read as probability-weighted scenario summaries rather than direct predictions of long contracts. Table \@ref(tab:compact-projections) lists the highest expected-AAV cases and shows how much probability remains on two-or-more-year outcomes.
-
-```{r market-scatter-plot, fig.width = 6.3, fig.height = 2.2, fig.cap = '(\\#fig:market-scatter) One-year probability versus expected AAV for unsigned 2026 wide receivers.'}
-label_players <- summary_xgb |>
-  arrange(desc(expectedAavMillions)) |>
-  slice_head(n = 7)
-
-summary_xgb |>
-  mutate(top_label = if_else(contractRowId %in% label_players$contractRowId, playerName, NA_character_)) |>
-  ggplot(aes(x = .pred_1, y = expectedAavMillions)) +
-  geom_point(aes(size = expectedTerm), color = '#2F6CA8', alpha = 0.68) +
-  geom_text(aes(label = top_label), hjust = -0.05, vjust = 0.25, size = 2.15, check_overlap = TRUE) +
-  scale_x_continuous(labels = percent_format(accuracy = 1), limits = c(0.5, 1.0)) +
-  scale_y_continuous(labels = dollar_format(prefix = '$', suffix = 'M')) +
-  scale_size_continuous(range = c(1.4, 4.5), guide = 'none') +
-  labs(x = 'Predicted Probability of a One-Year Contract', y = 'Expected AAV') +
-  theme(axis.title = element_text(size = 8), axis.text = element_text(size = 7))
-```
-
-```{r compact-projections-table, results = 'asis'}
-compact_projection_tbl |>
-  table_latex(
-    col_names = c('Player', 'Expected Term', 'P(1 Year)', 'P(2+ Years)', 'Expected AAV'),
-    caption = '(\\#tab:compact-projections) Highest expected AAV projections from the predictive model pair.',
-    align = c('l', 'r', 'r', 'r', 'r'),
-    font_size = 6.5
-  )
-```
-
-The third research question concerns what information is built into the forecasts. The predictive and interpretable models point to the same broad distinction. Term is driven most strongly by contract history and career stage. The boosted term model leans on observed contract number, years of experience, player-match quality, previous contract timing, age, and previous market value. In the lasso audit model, one-year scores are shaped by age, previous-contract timing, and recent game availability; longer-term classes retain production, team-context, and continuity signals. That means the model treats term as a market-commitment decision first and a pure receiving-production decision second. Compensation is tied more directly to receiving value. Weighted receiving yards, receiving yards per game, first downs per game, target share, prior cap share, and the supplied term scenario dominate the boosted importance table. In the ridge audit model, the largest coefficients are term indicators and previous-contract market variables, followed by receiving and snap-context features. The two outcomes are related but not interchangeable; term and price are predictable from different kinds of information.
-
-Player-level term-price menus are available in the \href{https://rentosaijo.github.io/NFLxC/}{companion dashboard}.
-
-# Limitations and Future Work
-
-Limitations mostly come from measurement and private context. Proxy signing dates can blur the pre-signing window, and name/roster matching is weakest for fringe players. Sparse pre-2020 route data make target volume hard to separate from route skill; route participation, separation, target depth/quality, and injury availability would sharpen that split. Public contracts omit guarantees, incentives, option years, medical risk, cap room, depth-chart need, and agent leverage, so AAV is incomplete. Future work should automate Spotrac refreshes, model guarantees/incentives, add interval and calibration checks, and score cap-and-need team scenarios.
-
-\newpage
-
-# Appendix
-
-## Appendix A: Data Construction
-
-The full cleaning workflow begins with Spotrac contract exports, keeps wide receiver rows, standardizes names and teams, parses contract economics, converts cap share to a decimal, buckets five-plus-year contracts, removes entry-like deals, and removes yearly rows already contained inside a prior multi-year contract. The contract spine is enriched with player-reference, roster, combine, regular-stat, snap-count, Next Gen receiving, team, and schedule data. Transaction dates are matched from ESPN by player, team, and contract clues when possible; otherwise the workflow uses the offseason proxy described in the main paper. Tables \@ref(tab:data-splits) and \@ref(tab:coverage) summarize the cleaned data splits and feature coverage.
-
-```{r data-splits-table, results = 'asis'}
-split_tbl |>
-  mutate(rows = comma_num(rows), players = comma_num(players)) |>
-  table_latex(
-    col_names = c('Split', 'Role', 'Rows', 'Players', 'Start Years'),
-    caption = '(\\#tab:data-splits) Modeling data after cleaning.',
-    align = c('l', 'l', 'r', 'r', 'c'),
-    wrap_col = 2,
-    wrap_width = '2.7in'
-  )
-```
-
-```{r coverage-table, results = 'asis'}
-coverage_tbl |>
-  mutate(train_coverage = pct_num(train_coverage, 1)) |>
-  table_latex(
-    col_names = c('Feature Family', 'Training Coverage'),
-    caption = '(\\#tab:coverage) Training coverage for major external feature families.',
-    align = c('l', 'r')
-  )
-```
-
-Figure \@ref(fig:term-dist) explains why the paper emphasizes probability quality. One-year contracts are `r pct_num(mean(train_data$term == 1), 1)` of the training data and `r pct_num(mean(validate_data$term == 1), 1)` of the validation data.
-
-```{r term-distribution, fig.width = 5.8, fig.height = 3.0, fig.cap = '(\\#fig:term-dist) Term distribution in the training and validation data. Five means five or more years.'}
-term_dist_tbl |>
-  mutate(term = factor(term, levels = 1:5, labels = c('1', '2', '3', '4', '5+'))) |>
-  ggplot(aes(x = term, y = pct, fill = split)) +
-  geom_col(position = position_dodge(width = 0.75), width = 0.65) +
-  scale_y_continuous(labels = percent_format(accuracy = 1)) +
-  scale_fill_manual(values = c('Train' = '#2F6CA8', 'Validate' = '#C44E52')) +
-  labs(x = 'Contract Term', y = 'Share of Contracts', fill = NULL) +
-  theme(legend.position = 'top')
-```
-
-## Appendix B: Model Comparison and Tuning
-
-The baseline stage compared null models, linear and penalized generalized linear models, neural networks, decision trees, random forests, XGBoost, and LightGBM where available. Tuning then focused on the strongest predictive and interpretable candidates from the baseline screen. XGBoost used Bayesian optimization; the penalized models used regularization grids. Table \@ref(tab:optimized) reports the selected tuned comparison used in the paper.
-
-```{r optimized-results, results = 'asis'}
-opt_tbl |>
-  filter(model != 'Random forest') |>
-  table_latex(
-    col_names = c('Task', 'Model', 'Validation Metric 1', 'Validation Metric 2', 'Validation Metric 3', 'Cross-Validation Metric'),
-    caption = '(\\#tab:optimized) Tuned model comparison on the signed 2026 validation set.',
-    align = c('l', 'l', 'r', 'r', 'r', 'r')
-  )
-```
-
-Tables \@ref(tab:baseline-term) and \@ref(tab:baseline-aav) give the full successful baseline screens for the term and compensation tasks.
-
-```{r appendix-baseline-term, results = 'asis'}
-term_baseline |>
+baseline_term_tbl <- term_baseline |>
   filter(status == 'ok') |>
   arrange(mnLogLoss) |>
   transmute(
-    Model = dplyr::case_when(
+    Model = case_when(
       modelId == 'xgboost' ~ 'XGBoost',
       modelId == 'random_forest_ranger' ~ 'Random forest',
       modelId == 'lasso_glmnet' ~ 'Lasso',
@@ -624,21 +426,14 @@ term_baseline |>
     `Log Loss` = round(mnLogLoss, 3),
     `ROC AUC` = round(rocAuc, 3),
     Brier = round(brier, 3),
-    Accuracy = pct_num(accuracy, 1)
-  ) |>
-  table_latex(
-    col_names = c('Model', 'Log Loss', 'ROC AUC', 'Brier', 'Accuracy'),
-    caption = '(\\#tab:baseline-term) Baseline term models ordered by validation log loss.',
-    align = c('l', 'r', 'r', 'r', 'r')
+    Accuracy = pct_cell(accuracy, 1)
   )
-```
 
-```{r appendix-baseline-aav, results = 'asis'}
-aav_baseline |>
+baseline_aav_tbl <- aav_baseline |>
   filter(status == 'ok') |>
   arrange(rmse) |>
   transmute(
-    Model = dplyr::case_when(
+    Model = case_when(
       modelId == 'xgboost' ~ 'XGBoost',
       modelId == 'random_forest_ranger' ~ 'Random forest',
       modelId == 'ridge_glmnet' ~ 'Ridge',
@@ -654,20 +449,326 @@ aav_baseline |>
     RMSE = round(rmse, 4),
     MAE = round(mae, 4),
     `R-squared` = round(rsq, 3)
+  )
+
+top_projection_tbl <- summary_xgb |>
+  arrange(desc(expectedAavMillions)) |>
+  transmute(
+    Player = playerName,
+    Age = ageAtSigning,
+    `Previous Team` = prevSignedTeam,
+    `Expected Term` = round(expectedTerm, 2),
+    `P(1 Year)` = pct_cell(.pred_1, 1),
+    `P(2+ Years)` = pct_cell(.pred_2 + .pred_3 + .pred_4 + .pred_5, 1),
+    `Expected AAV` = money_cell(expectedAavMillions, 2),
+    `Modal AAV` = money_cell(modalAavMillions, 2)
   ) |>
+  slice_head(n = 20)
+
+top_projection_main <- top_projection_tbl |>
+  slice_head(n = 10)
+
+summary_stats <- summary_xgb |>
+  summarise(
+    n = n(),
+    mean_p1 = mean(.pred_1),
+    median_aav = median(expectedAavMillions),
+    mean_aav = mean(expectedAavMillions),
+    max_aav = max(expectedAavMillions),
+    mean_term = mean(expectedTerm),
+    max_term = max(expectedTerm),
+    p2plus = mean(.pred_2 + .pred_3 + .pred_4 + .pred_5)
+  )
+
+term_rmse_dollars <- aav_xgb_row$rmse[[1]] * summary_xgb$impliedCap2026[[1]] / 1e6
+train_one_year <- mean(train_data$term == 1)
+validate_one_year <- mean(validate_data$term == 1)
+dashboard_url <- 'https://rentosaijo.github.io/NFLxC/'
+
+model_pair_tbl <- tibble(
+  Model = c('Predictive term', 'Predictive AAV%', 'Interpretable term', 'Interpretable AAV%'),
+  `Selected Family` = c('XGBoost multiclass classifier', 'XGBoost conditional regressor', 'Lasso multinomial logistic regression', 'Ridge linear regression'),
+  `Validation Evidence` = c(
+    sprintf('Log loss %.3f, Brier %.3f, accuracy %.1f%%', term_xgb_row$mnLogLoss, term_xgb_row$brier, 100 * term_xgb_row$accuracy),
+    sprintf('RMSE %.4f, MAE %.4f, R-squared %.3f', aav_xgb_row$rmse, aav_xgb_row$mae, aav_xgb_row$rsq),
+    sprintf('Log loss %.3f, Brier %.3f, accuracy %.1f%%', term_ll_row$mnLogLoss, term_ll_row$brier, 100 * term_ll_row$accuracy),
+    sprintf('RMSE %.4f, MAE %.4f, R-squared %.3f', aav_rl_row$rmse, aav_rl_row$mae, aav_rl_row$rsq)
+  ),
+  `Project Role` = c(
+    'Final probability engine for contract term.',
+    'Final scenario-price engine for AAV%.',
+    'Audit model with class-specific nonzero coefficients.',
+    'Audit model with a stable linear coefficient vector.'
+  )
+)
+
+forecast_summary_tbl <- tibble(
+  Quantity = c(
+    'Scored unsigned players',
+    'Players with modal one-year term',
+    'Mean one-year probability',
+    'Mean multi-year probability',
+    'Mean expected AAV',
+    'Median expected AAV',
+    'Maximum expected AAV'
+  ),
+  Value = c(
+    comma_num(nrow(summary_xgb)),
+    comma_num(sum(summary_xgb$modalTerm == 1)),
+    pct_cell(summary_stats$mean_p1, 1),
+    pct_cell(summary_stats$p2plus, 1),
+    money_cell(summary_stats$mean_aav, 2),
+    money_cell(summary_stats$median_aav, 2),
+    money_cell(summary_stats$max_aav, 2)
+  )
+)
+```
+
+\begin{center}
+\begin{minipage}{0.86\textwidth}
+\small
+
+\textbf{Abstract.} This paper asks whether public data can predict veteran NFL wide receiver contract term, average annual value as a salary-cap share (AAV\%), and the variables that make those forecasts credible. Spotrac contract records are enriched with nflverse player, roster, combine, production, snap, Next Gen Stats, team, and schedule data, plus ESPN transaction dates when matched. Because term and annual price are different negotiation choices, we use a multiclass term model and a conditional AAV\% model. Tuned XGBoost performs best on signed 2026 validation contracts, with term log loss `r round(term_xgb_row$mnLogLoss[[1]], 3)` and AAV\% RMSE `r round(aav_xgb_row$rmse[[1]], 4)`. Scoring `r nrow(test_data)` unsigned 2026 receivers produces a short-term market: every player has a modal one-year deal, with median expected AAV of `r money_m(summary_stats$median_aav, 2)`.
+
+\end{minipage}
+\end{center}
+
+# Introduction and Background
+
+An NFL wide receiver is an offensive player whose main job is to catch passes, but wide receiver contracts are not priced on catches alone. A one-year depth contract, a two-year role-player agreement, and a four-year star extension all belong to the same position group while expressing different levels of team commitment, player leverage, age risk, and market timing. Average annual value (AAV) is reported dollars per contract year; AAV% divides AAV by the salary cap at signing so a deal from 2005 and a deal from 2025 can be compared on the same economic scale.
+
+The research questions are: Can veteran wide receiver contract term be predicted from public information available before signing? Can AAV% be predicted with useful accuracy once term is specified? Which player, production, contract-history, team-context, and market variables explain those predictions? Public contract forecasts are often single dollar estimates, while actual negotiation resembles a menu of term-price scenarios. We therefore use two linked model families: a term classifier over one, two, three, four, and five-or-more years, and a conditional price model that estimates AAV% under each possible term scenario.
+
+Figure \@ref(fig:eda-term-price) previews the empirical reason for this architecture. The top row shows that one-year deals are already common in training (`r pct_num(train_one_year, 1)`) and become dominant in signed 2026 validation contracts (`r pct_num(validate_one_year, 1)`), so term must be evaluated with probability scores rather than raw accuracy. The bottom row shows that longer commitments occupy a different AAV% region, which supports pricing AAV% conditional on a supplied term instead of forcing one model to learn both decisions at once.
+
+```{r eda-term-price-plot, fig.width = 6.25, fig.height = 2.75, fig.cap = '(\\#fig:eda-term-price) Term concentration and term-price separation in the labeled data. Bars show each term class as a share of contracts; boxes show the AAV% distribution within each term. The validation market is more one-year concentrated than training, while longer deals occupy higher cap-share ranges, motivating probability-based term evaluation and a conditional AAV% model.'}
+eda_palette <- c('1' = '#4C78A8', '2' = '#72B7B2', '3' = '#F58518', '4' = '#54A24B', '5+' = '#B279A2')
+
+mix_plot <- term_mix_plot_data |>
+  ggplot(aes(x = term_label, y = value, fill = term_label)) +
+  geom_col(width = 0.68, alpha = 0.9) +
+  geom_text(aes(label = label), vjust = -0.12, size = 1.75, lineheight = 0.82) +
+  facet_wrap(~ split, nrow = 1) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), expand = expansion(mult = c(0.02, 0.18))) +
+  scale_fill_manual(values = eda_palette) +
+  labs(x = NULL, y = 'Share of Contracts') +
+  theme(
+    legend.position = 'none',
+    axis.text = element_text(size = 6.7),
+    axis.title.y = element_text(size = 7.2),
+    strip.text = element_text(size = 7.6)
+  )
+
+aav_plot <- aav_plot_data |>
+  ggplot(aes(x = term_label, y = value, fill = term_label)) +
+  geom_boxplot(width = 0.58, outlier.alpha = 0.14, outlier.size = 0.3, linewidth = 0.22) +
+  facet_wrap(~ split, nrow = 1) +
+  scale_y_continuous(labels = percent_format(accuracy = 1), expand = expansion(mult = c(0.02, 0.07))) +
+  scale_fill_manual(values = eda_palette) +
+  labs(x = 'Contract Term', y = 'AAV%') +
+  theme(
+    legend.position = 'none',
+    axis.text = element_text(size = 6.7),
+    axis.title = element_text(size = 7.2),
+    strip.text = element_blank()
+  )
+
+mix_plot / aav_plot + plot_layout(heights = c(0.9, 1.15))
+```
+
+# Data, EDA, and Methods
+
+The contract spine comes from Spotrac wide receiver exports by decade [@spotrac]. Cleaning keeps veteran, non-entry wide receiver deals because rookie-scale contracts follow a separate bargaining mechanism. It also standardizes names and teams, parses economics, converts AAV% to cap share, repairs inconsistent end years, removes yearly rows embedded inside prior multi-year contracts, and builds previous-contract features. It then enriches rows with nflverse player references, rosters, combine measurements, regular receiving statistics, snap counts, Next Gen receiving metrics, team offense, and schedules [@nflreadr]. ESPN transaction descriptions are matched by player, team, and contract clues when possible; otherwise the workflow uses an explicit March 15 offseason proxy. Prior-season predictors are the two most recent completed regular seasons before that reference date, not a simple calendar lag; the most recent season is weighted twice as heavily as the second prior season, trend variables compare the two seasons when both exist, and availability flags preserve whether each feature family was observed.
+
+The final modeling files contain `r comma_num(nrow(train_data))` training contracts from `r min(train_data$startYear)`-`r max(train_data$startYear)`, `r nrow(validate_data)` signed 2026 validation contracts, and `r nrow(test_data)` unsigned 2026 free-agent candidates. The validation set is kept separate for model comparison, while the test file intentionally leaves outcomes blank because those players are the actual unsigned market to be scored. The EDA in Figure \@ref(fig:eda-term-price) shaped two choices. First, the term target is imbalanced enough that a model can look accurate by always predicting one year, so model selection must reward calibrated probabilities through log loss and Brier score. Second, AAV% rises with term, but the relationship is not just a dollar ranking of players; it is a negotiation surface where the same receiver can have a low-probability high-term scenario and a high-probability one-year scenario.
+
+Modeling uses `tidymodels` recipes and engines [@tidymodels]. Identifiers, audit dates, signing team, and current-contract outcomes are removed. Categorical predictors receive unknown/novel handling, mode imputation, and dummy encoding; numeric predictors receive median imputation, zero-variance filtering, and normalization. The term task drops current AAV and AAV%; the AAV% task drops current AAV but keeps term because production scoring evaluates price under supplied term scenarios. Screening compared null, linear, penalized, tree, random forest, boosted, neural-network, and LightGBM-style candidates where available. Final tuning used grouped five-fold cross-validation by player, which prevents one player's related contracts from appearing in both assessment and fitting folds. The term model minimizes multinomial log loss because the output is a five-class probability vector; the AAV% model minimizes RMSE because the output is a continuous cap-share price. The selected predictive pair is XGBoost for both tasks [@xgboost]; lasso multinomial regression and ridge regression provide audit models [@glmnet].
+
+# Results and Discussion
+
+On the signed 2026 validation set, the tuned XGBoost term model achieved log loss `r round(term_xgb_row$mnLogLoss[[1]], 3)`, Brier score `r round(term_xgb_row$brier[[1]], 3)`, and accuracy `r pct_num(term_xgb_row$accuracy[[1]], 1)`. The null majority classifier is more accurate because `r validate_data |> count(term) |> arrange(desc(n)) |> slice(1) |> pull(n)` of `r nrow(validate_data)` validation contracts are one-year deals, but it is worse on probability scores; that result confirms the EDA rather than contradicting the model. The useful term output is a probability distribution, not a winner-take-all label. The XGBoost AAV% model achieved RMSE `r round(aav_xgb_row$rmse[[1]], 4)`, MAE `r round(aav_xgb_row$mae[[1]], 4)`, and \(R^2 = `r round(aav_xgb_row$rsq[[1]], 3)`\). At the implied 2026 cap, the RMSE is roughly `r money_m(term_rmse_dollars, 2)`, which is precise enough for market screening while still leaving room for information public data cannot see.
+
+The tuned comparisons in Appendix B also show why the final system keeps both predictive and audit models. XGBoost is the best validation choice for term by log loss and for AAV% by RMSE, but the margins over random forest and ridge-style alternatives are small enough that interpretability checks matter. The lasso term model and ridge AAV% model are therefore not fallback forecasts; they are safeguards that expose whether the stronger nonlinear models are leaning on sensible football and market signals. This is especially important because the strongest-looking accuracy benchmark is the least informative one: a model that predicts one year for everyone can exploit the 2026 class mix without producing useful probabilities for the few players who might command multi-year deals.
+
+The interpretation artifacts in Appendix C support the two-model design. Term importance is led by contract number, years of experience, previous-team/matching indicators, prior timing, age, and previous market value; recent production appears, but less dominantly. Compensation importance is led by weighted receiving yards, yards per game, first downs per game, target share, prior cap share, snap role, and the supplied term scenario. In plain language, the model treats term as a commitment and career-stage decision, while AAV% is more directly a receiving-value and market-price decision. The penalized audit models point in the same direction, which makes the boosted results easier to trust: the strongest predictive signals are football-plausible rather than artifacts of row order, player identifiers, or post-signing outcomes.
+
+Applied to the unsigned 2026 receiver pool, all `r nrow(summary_xgb)` scored players have a modal one-year contract, the mean one-year probability is `r pct_num(summary_stats$mean_p1, 1)`, and the mean probability of any multi-year outcome is `r pct_num(summary_stats$p2plus, 1)`. Price remains right-skewed: mean expected AAV is `r money_m(summary_stats$mean_aav, 2)`, median expected AAV is `r money_m(summary_stats$median_aav, 2)`, and the maximum is `r money_m(summary_stats$max_aav, 2)`. Deebo Samuel, Jauan Jennings, and Keenan Allen top the expected-AAV ranking, but even their modal forecast remains one year. This is why the final output is a term-price menu: expected AAV weights all term scenarios by their probabilities, while modal AAV reports the price attached to the most likely term. Player-level menus are available in the \href{https://rentosaijo.github.io/NFLxC/}{companion dashboard}, and Appendix D shows both the market board and scenario paths.
+
+The conclusion is that the project is useful less as a single prediction machine than as a disciplined way to separate contract questions. The first research question receives a qualified yes: term is predictable enough to rank probabilities, but the validation distribution makes a hard class label too blunt. The second question receives a stronger yes: AAV% is meaningfully predictable when the model is given a term scenario. The third question is answered by the contrast between feature families. Contract history and career stage explain commitment; receiving production, prior price, role, and term explain compensation. That split makes the final app more interpretable because a user can compare one-year, two-year, and longer paths instead of reading one dollar number as certainty.
+
+# Limitations and Future Work
+
+The main limitations are measurement, validation size, and unobserved negotiation context. Signing-date matches cover only part of history, player identity matching is probabilistic for fringe players, and Next Gen receiving coverage is thin before recent seasons. The validation set has only `r nrow(validate_data)` signed 2026 contracts and is concentrated in one-year deals, so small metric differences should not be overinterpreted. Public data also omit guarantees, incentives, option years, injury detail, cap room, depth-chart need, agent leverage, and competing offers. That is especially important for AAV: two deals with the same annual value can differ sharply if one is guaranteed and the other is built from non-guaranteed years or incentives.
+
+Future work should add guarantee and incentive targets, automate contract-data refreshes, test calibration and prediction intervals, and move from player-only scoring to team-player matching. A team-aware version would add cap space, receiver depth chart, offensive style, quarterback quality, and recent target vacancy, then score the same receiver under different destinations. The next evaluation should also ask whether a group assigned a 20% chance of multi-year contracts actually signs multi-year deals about one in five times over repeated markets. The present workflow is reproducible enough for that extension: a reader can rebuild the modeling files from the contract exports and public data pulls, verify the time-based split, inspect the baseline and tuned comparisons, and reproduce the final scenario files used by the dashboard.
+
+\newpage
+
+# Appendix
+
+## Appendix A: Data Construction and Feature Coverage
+
+```{r data-sources-table, results = 'asis'}
+source_tbl |>
   table_latex(
-    col_names = c('Model', 'RMSE', 'MAE', 'R-squared'),
-    caption = '(\\#tab:baseline-aav) Baseline compensation models ordered by validation RMSE.',
-    align = c('l', 'r', 'r', 'r')
+    col_names = c('Source', 'Role in Project'),
+    caption = '(\\#tab:data-sources) Data sources and how each source enters the project.',
+    align = c('l', 'l'),
+    wrap_col = 2,
+    wrap_width = '4.1in',
+    font_size = 7.3
+  ) |>
+  kableExtra::column_spec(1, width = '1.55in')
+```
+
+The reproducible data workflow begins with three local Spotrac wide receiver contract exports covering the 2000s, 2010s, and 2020s. Table \@ref(tab:data-sources) documents the provenance of each data family. The local contract files define the target rows; the external sources add information that would plausibly be known before signing.
+
+```{r response-table, results = 'asis'}
+response_tbl |>
+  table_latex(
+    col_names = c('Response', 'Definition', 'Why This Target'),
+    caption = '(\\#tab:responses) Modeled responses and statistical rationale.',
+    align = c('l', 'l', 'l'),
+    wrap_col = 2,
+    wrap_width = '2.25in',
+    font_size = 7.1
+  ) |>
+  kableExtra::column_spec(3, width = '2.45in')
+```
+
+Table \@ref(tab:responses) defines the two modeled responses. This distinction is the reason the final workflow has two model sets: term is a commitment outcome, while AAV% is a price outcome evaluated under a supplied term scenario.
+
+```{r data-splits-table, results = 'asis'}
+split_tbl |>
+  mutate(Rows = comma_num(Rows), Players = comma_num(Players)) |>
+  table_latex(
+    col_names = c('Split', 'Role', 'Rows', 'Players', 'Years'),
+    caption = '(\\#tab:data-splits) Modeling data after cleaning.',
+    align = c('l', 'l', 'r', 'r', 'c'),
+    wrap_col = 2,
+    wrap_width = '2.95in'
   )
 ```
 
-Table \@ref(tab:hyperparameters) records the selected XGBoost settings used for the final predictive models.
+Table \@ref(tab:data-splits) gives the final row universe after cleaning. The split is time-based rather than random because the intended use case is forward projection into an unsigned free-agent market.
 
-```{r appendix-hyperparameters, results = 'asis'}
+```{r cleaning-table, results = 'asis'}
+cleaning_tbl |>
+  table_latex(
+    col_names = c('Step', 'Implementation Detail'),
+    caption = '(\\#tab:cleaning) Key cleaning and temporal-logic decisions in R/clean.R.',
+    align = c('l', 'l'),
+    wrap_col = 2,
+    wrap_width = '4.7in',
+    font_size = 7.1
+  )
+```
+
+Table \@ref(tab:cleaning) summarizes the cleaning decisions that make the rows reproducible and reduce leakage. The most important details are the removal of entry-like contracts, the removal of embedded rows already covered by prior multi-year deals, and the use of signing-date-aware prior seasons.
+
+```{r coverage-table, results = 'asis'}
+coverage_tbl |>
+  mutate(`Training Coverage` = pct_cell(`Training Coverage`, 1)) |>
+  table_latex(
+    col_names = c('Feature Family', 'Training Coverage'),
+    caption = '(\\#tab:coverage) Training coverage for external feature families.',
+    align = c('l', 'r')
+  )
+```
+
+Table \@ref(tab:coverage) reports feature coverage in the training file. This also explains why the final app and paper emphasize universally available contract context first, then production, snap, and Next Gen information when present.
+
+```{r term-distribution-table, results = 'asis'}
+term_dist_tbl |>
+  transmute(
+    Split = as.character(split),
+    Term = as.character(term_label),
+    Contracts = n,
+    Share = pct_cell(pct, 1)
+  ) |>
+  table_latex(
+    col_names = c('Split', 'Term', 'Contracts', 'Share'),
+    caption = '(\\#tab:term-dist) Contract-term distribution by modeling split.',
+    align = c('l', 'c', 'r', 'r'),
+    font_size = 7.2
+  )
+```
+
+Table \@ref(tab:term-dist) gives the numeric version of the term imbalance shown in the main EDA figure. The validation market is substantially more one-year-heavy than the historical training market.
+
+The two-season feature convention creates `Prev1`, `Prev2`, `Weighted`, and `Delta` versions of regular-stat, snap, Next Gen, team, and market metrics. Weighted features use `(Prev2 + 2 * Prev1) / 3` when both seasons exist, fall back to the observed season when only one exists, and preserve availability flags. Deltas are set to zero when a trend cannot be observed, which treats missing trend as neutral while keeping true zeroes distinct in raw metrics.
+
+## Appendix B: Model Selection
+
+```{r recipe-table, results = 'asis'}
+recipe_tbl |>
+  table_latex(
+    col_names = c('Component', 'Modeling Choice'),
+    caption = '(\\#tab:recipe) Modeling preprocessing and leakage controls.',
+    align = c('l', 'l'),
+    wrap_col = 2,
+    wrap_width = '4.65in',
+    font_size = 7.2
+  )
+```
+
+Table \@ref(tab:recipe) records the modeling recipe. These choices are shared by the baseline, tuning, final refit, and prediction scripts, so the exported results can be traced back to a single preprocessing contract.
+
+```{r appendix-baseline-term, results = 'asis'}
+baseline_term_tbl |>
+  table_latex(
+    col_names = c('Model', 'Log Loss', 'ROC AUC', 'Brier', 'Accuracy'),
+    caption = '(\\#tab:baseline-term) Baseline term models ordered by validation log loss.',
+    align = c('l', 'r', 'r', 'r', 'r'),
+    font_size = 7
+  )
+```
+
+Table \@ref(tab:baseline-term) shows every successful untuned term baseline. The null classifier is included deliberately because the one-year class imbalance makes it a necessary benchmark: it is accurate but poorly probabilistic.
+
+```{r appendix-baseline-aav, results = 'asis'}
+baseline_aav_tbl |>
+  table_latex(
+    col_names = c('Model', 'RMSE', 'MAE', 'R-squared'),
+    caption = '(\\#tab:baseline-aav) Baseline compensation models ordered by validation RMSE.',
+    align = c('l', 'r', 'r', 'r'),
+    font_size = 7
+  )
+```
+
+Table \@ref(tab:baseline-aav) shows every successful untuned AAV% baseline. Boosted trees and random forests performed best, while ridge was the strongest linear-style baseline.
+
+```{r optimized-results, results = 'asis'}
+opt_tbl |>
+  table_latex(
+    col_names = c('Task', 'Model', 'Validation Metric 1', 'Validation Metric 2', 'Validation Metric 3', 'Cross-Validation Metric'),
+    caption = '(\\#tab:optimized) Tuned model comparison on the signed 2026 validation set.',
+    align = c('l', 'l', 'r', 'r', 'r', 'r'),
+    font_size = 7
+  )
+```
+
+Table \@ref(tab:optimized) is the final tuned comparison. The predictive pair is chosen from these validation results; the penalized models remain in the project because they provide interpretable audit trails.
+
+```{r selected-models-table, results = 'asis'}
+model_pair_tbl |>
+  table_latex(
+    col_names = c('Model', 'Selected Family', 'Validation Evidence', 'Project Role'),
+    caption = '(\\#tab:selected-models) Final model families and their roles in the project.',
+    align = c('l', 'l', 'l', 'l'),
+    wrap_col = 2,
+    wrap_width = '1.65in',
+    font_size = 6.8
+  ) |>
+  kableExtra::column_spec(3, width = '2.0in') |>
+  kableExtra::column_spec(4, width = '1.85in')
+```
+
+Table \@ref(tab:selected-models) clarifies why there are two sets of final models. The XGBoost pair is the production forecasting pair; the lasso/ridge pair is the transparent audit pair used to check whether the boosted forecasts are relying on football-plausible signals.
+
+```{r hyperparameters-table, results = 'asis'}
 hyper_tbl <- bind_rows(
-  term_opt |>
-    filter(modelId == 'term_xgb') |>
+  term_xgb_row |>
     transmute(
       Model = 'Term XGBoost',
       mtry = mtry,
@@ -678,10 +779,9 @@ hyper_tbl <- bind_rows(
       loss_reduction = loss_reduction,
       sample_size = sample_size
     ),
-  aav_opt |>
-    filter(modelId == 'aavPerc_xgb') |>
+  aav_xgb_row |>
     transmute(
-      Model = 'Compensation XGBoost',
+      Model = 'AAV% XGBoost',
       mtry = mtry,
       trees = trees,
       min_n = min_n,
@@ -702,43 +802,47 @@ hyper_tbl |>
   )
 ```
 
+Table \@ref(tab:hyperparameters) records the selected XGBoost hyperparameters. The tuned term model is deeper and slower-learning; the tuned AAV% model is shallower, which is consistent with a smoother conditional price surface.
+
 ## Appendix C: Interpretation Artifacts
 
-The XGBoost models are interpreted through global gain importance. Importance is not a causal effect or a signed marginal coefficient; it reports which transformed predictors most improved split quality across the fitted trees. Figures \@ref(fig:term-importance) and \@ref(fig:aav-importance) show the predictive models' highest-gain features.
-
-```{r term-importance-plot, fig.width = 6.1, fig.height = 3.6, fig.cap = '(\\#fig:term-importance) Top gain-importance features for the predictive term model.'}
+```{r term-importance-plot, fig.width = 6.2, fig.height = 4.7, fig.cap = '(\\#fig:term-importance) Top gain-importance features for the predictive term model.'}
 term_xgb_imp |>
-  slice_head(n = 15) |>
+  slice_head(n = 25) |>
   mutate(Feature = fct_reorder(clean_feature(Feature), Gain)) |>
   ggplot(aes(x = Gain, y = Feature)) +
-  geom_col(fill = '#2F6CA8') +
+  geom_col(fill = '#4C78A8') +
   labs(x = 'Gain Importance', y = NULL)
 ```
 
-```{r aav-importance-plot, fig.width = 6.1, fig.height = 3.6, fig.cap = '(\\#fig:aav-importance) Top gain-importance features for the predictive conditional AAV% model.'}
+Figure \@ref(fig:term-importance) shows the top 25 gain-importance features for the predictive term model. Gain importance is unsigned and non-causal, but it identifies which transformed predictors most improved tree splits. Contract-history, career-stage, and match-quality features dominate, with production appearing after those market-commitment signals.
+
+```{r aav-importance-plot, fig.width = 6.2, fig.height = 4.7, fig.cap = '(\\#fig:aav-importance) Top gain-importance features for the predictive conditional AAV% model.'}
 aav_xgb_imp |>
-  slice_head(n = 15) |>
+  slice_head(n = 25) |>
   mutate(Feature = fct_reorder(clean_feature(Feature), Gain)) |>
   ggplot(aes(x = Gain, y = Feature)) +
-  geom_col(fill = '#4C956C') +
+  geom_col(fill = '#54A24B') +
   labs(x = 'Gain Importance', y = NULL)
 ```
 
-Tables \@ref(tab:lasso-sparsity) and \@ref(tab:lasso-coefs) summarize the lasso audit model. The sparsity table shows how many predictors remain active by term class, while the coefficient table shows the strongest retained signals within each class.
+Figure \@ref(fig:aav-importance) gives the parallel importance view for the conditional AAV% model. Receiving value, target share, prior market price, snap role, and term indicators drive compensation more directly than they drive term.
 
 ```{r appendix-lasso-sparsity, results = 'asis'}
 term_ll_coef |>
   filter(feature != '(Intercept)', coefficient != 0) |>
-  count(class, name = 'non_zero_coefficients') |>
+  count(class, name = 'Nonzero Coefficients') |>
   mutate(class = if_else(class == 5, '5+', as.character(class))) |>
   table_latex(
-    col_names = c('Term Class', 'Non-Zero Coefficients'),
+    col_names = c('Term Class', 'Nonzero Coefficients'),
     caption = '(\\#tab:lasso-sparsity) Class-specific sparsity in the lasso multinomial term model.',
     align = c('c', 'r')
   )
 ```
 
-```{r appendix-lasso-coefficients, results = 'asis'}
+Table \@ref(tab:lasso-sparsity) reports how many transformed predictors remain active for each term class in the lasso multinomial model. The class-specific sparsity pattern is useful because it shows that the interpretable model is not using the same number of signals for every contract length.
+
+```{r lasso-coefficients, results = 'asis'}
 term_ll_coef |>
   filter(feature != '(Intercept)', coefficient != 0) |>
   mutate(
@@ -747,7 +851,7 @@ term_ll_coef |>
   ) |>
   arrange(class, desc(abs_value)) |>
   group_by(class) |>
-  slice_head(n = 5) |>
+  slice_head(n = 10) |>
   ungroup() |>
   transmute(
     `Term Class` = class,
@@ -757,15 +861,15 @@ term_ll_coef |>
   ) |>
   table_latex(
     col_names = c('Term Class', 'Feature', 'Coefficient', 'Absolute Value'),
-    caption = '(\\#tab:lasso-coefs) Five largest absolute nonzero lasso coefficients by term class.',
+    caption = '(\\#tab:lasso-coefs) Ten largest absolute nonzero lasso coefficients by term class.',
     align = c('c', 'l', 'r', 'r'),
-    font_size = 6.5
+    font_size = 6.1
   )
 ```
 
-Table \@ref(tab:ridge-coefs) gives the largest absolute coefficients from the ridge compensation audit model.
+Table \@ref(tab:lasso-coefs) lists the ten largest absolute nonzero lasso coefficients in each class. Coefficients are on the recipe-transformed scale, so they should be read as audit weights rather than raw-unit effects.
 
-```{r appendix-ridge-coefficients, results = 'asis'}
+```{r ridge-coefficients, results = 'asis'}
 aav_rl_coef |>
   filter(feature != '(Intercept)') |>
   mutate(abs_value = abs(coefficient)) |>
@@ -775,30 +879,62 @@ aav_rl_coef |>
     Coefficient = round(coefficient, 6),
     `Absolute Value` = round(abs_value, 6)
   ) |>
-  slice_head(n = 15) |>
+  slice_head(n = 25) |>
   table_latex(
     col_names = c('Feature', 'Coefficient', 'Absolute Value'),
     caption = '(\\#tab:ridge-coefs) Largest absolute coefficients in the ridge compensation model.',
     align = c('l', 'r', 'r'),
-    font_size = 7
+    font_size = 6.8
   )
 ```
 
-## Appendix D: Additional Forecast Outputs
+Table \@ref(tab:ridge-coefs) gives the 25 largest absolute coefficients from the ridge compensation model. Ridge keeps all transformed predictors but shrinks them, so the largest weights are the best compact summary of the linear audit model.
 
-Table \@ref(tab:top-projections) expands the main-paper projection table to the ten highest expected-AAV players. Figure \@ref(fig:scenario-paths) shows how predicted AAV changes when the same player is evaluated under different term scenarios, with point size representing the term probability assigned by the term model.
+## Appendix D: Forecast Outputs
+
+```{r forecast-summary-table, results = 'asis'}
+forecast_summary_tbl |>
+  table_latex(
+    col_names = c('Quantity', 'Value'),
+    caption = '(\\#tab:forecast-summary) Market-level summary of unsigned 2026 WR projections from the predictive pair.',
+    align = c('l', 'r')
+  )
+```
+
+Table \@ref(tab:forecast-summary) summarizes the final scoring run. It is a market-level summary, not a claim that every individual contract will be one year; the probabilities still leave room for player-specific multi-year outcomes.
 
 ```{r top-projections-table, results = 'asis'}
 top_projection_tbl |>
   table_latex(
     col_names = c('Player', 'Age', 'Previous Team', 'Expected Term', 'P(1 Year)', 'P(2+ Years)', 'Expected AAV', 'Modal AAV'),
-    caption = '(\\#tab:top-projections) Ten highest expected AAV projections from the predictive model pair.',
+    caption = '(\\#tab:top-projections) Twenty highest expected-AAV projections from the predictive model pair.',
     align = c('l', 'r', 'c', 'r', 'r', 'r', 'r', 'r'),
-    font_size = 7
+    font_size = 6.7
   )
 ```
 
-```{r scenario-paths-plot, fig.width = 6.2, fig.height = 3.6, fig.cap = '(\\#fig:scenario-paths) Scenario-level AAV paths for the three highest expected-AAV players.'}
+Table \@ref(tab:top-projections) expands the main-text forecast discussion to the 20 highest expected-AAV players. Expected AAV is probability-weighted over the term distribution; modal AAV is the AAV attached to the most likely term scenario.
+
+```{r market-scatter-plot, fig.width = 6.2, fig.height = 3.3, fig.cap = '(\\#fig:market-scatter) One-year probability versus expected AAV for unsigned 2026 wide receivers.'}
+label_players <- summary_xgb |>
+  arrange(desc(expectedAavMillions)) |>
+  slice_head(n = 8)
+
+summary_xgb |>
+  mutate(top_label = if_else(contractRowId %in% label_players$contractRowId, playerName, NA_character_)) |>
+  ggplot(aes(x = .pred_1, y = expectedAavMillions)) +
+  geom_point(aes(size = expectedTerm), color = '#4C78A8', alpha = 0.68) +
+  geom_text(aes(label = top_label), hjust = -0.05, vjust = 0.25, size = 2.25, check_overlap = TRUE) +
+  scale_x_continuous(labels = percent_format(accuracy = 1), limits = c(0.5, 1.0)) +
+  scale_y_continuous(labels = dollar_format(prefix = '$', suffix = 'M')) +
+  scale_size_continuous(range = c(1.4, 4.5), guide = 'none') +
+  labs(x = 'Predicted Probability of a One-Year Contract', y = 'Expected AAV') +
+  theme(axis.title = element_text(size = 8), axis.text = element_text(size = 7))
+```
+
+Figure \@ref(fig:market-scatter) shows the full unsigned market board. The dense cluster at high one-year probability and low AAV is the key market shape; the labeled players are high-price exceptions rather than evidence of a broad multi-year market.
+
+```{r scenario-paths-plot, fig.width = 6.2, fig.height = 3.4, fig.cap = '(\\#fig:scenario-paths) Scenario-level AAV paths for the three highest expected-AAV players. Point size is the term probability assigned by the term model.'}
 top_three <- summary_xgb |>
   arrange(desc(expectedAavMillions)) |>
   slice_head(n = 3) |>
@@ -825,6 +961,8 @@ scenarios_xgb |>
     legend.title = element_text(size = 7)
   )
 ```
+
+Figure \@ref(fig:scenario-paths) displays the scenario-price menu for the three highest expected-AAV players. The lines show that the price model raises AAV under longer supplied terms, but point size shows that the term model assigns most probability to the one-year point.
 
 \newpage
 
