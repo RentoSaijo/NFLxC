@@ -802,7 +802,7 @@ hyper_tbl |>
   )
 ```
 
-Table \@ref(tab:hyperparameters) records the selected XGBoost hyperparameters. The tuned term model is deeper and slower-learning; the tuned AAV% model is shallower, which is consistent with a smoother conditional price surface.
+Table \@ref(tab:hyperparameters) records the selected XGBoost hyperparameters from Bayesian optimization. The tuned term model is deeper and slower-learning; the tuned AAV% model is shallower, which is consistent with a smoother conditional price surface.
 
 ## Appendix C: Interpretation Artifacts
 
