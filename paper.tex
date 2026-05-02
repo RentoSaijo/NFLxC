@@ -2,13 +2,11 @@
 \PassOptionsToPackage{unicode}{hyperref}
 \PassOptionsToPackage{hyphens}{url}
 \PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
 \documentclass[
   10pt,
 ]{article}
-\usepackage{xcolor}
-\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
 \usepackage{amsmath,amssymb}
-\setcounter{secnumdepth}{5}
 \usepackage{iftex}
 \ifPDFTeX
   \usepackage[T1]{fontenc}
@@ -39,8 +37,9 @@
 }{% if KOMA class
   \KOMAoptions{parskip=half}}
 \makeatother
+\usepackage{xcolor}
+\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
 \usepackage{longtable,booktabs,array}
-\newcounter{none} % for unnumbered tables
 \usepackage{calc} % for calculating minipage widths
 % Correct order of tables after \paragraph or \subparagraph
 \usepackage{etoolbox}
@@ -65,6 +64,10 @@
 % Set default figure placement to htbp
 \def\fps@figure{htbp}
 \makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{5}
 % definitions for citeproc citations
 \NewDocumentCommand\citeproctext{}{}
 \NewDocumentCommand\citeproc{mm}{%
@@ -98,9 +101,6 @@
 \newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
 \newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
-\setlength{\emergencystretch}{3em} % prevent overfull lines
-\providecommand{\tightlist}{%
-  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 \usepackage{xcolor}
 \usepackage{hyperref}
 \hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue}
@@ -156,6 +156,20 @@
 \renewcommand{\headrulewidth}{0.35pt}
 \renewcommand{\footrulewidth}{0.35pt}
 \sloppy
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
 \usepackage{bookmark}
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same}
@@ -211,21 +225,21 @@ Figure \ref{fig:eda-term-price} previews the empirical reason for this architect
 
 \section{Data, EDA, and Methods}\label{data-eda-and-methods}
 
-The contract spine comes from Spotrac wide receiver exports by decade (\citeproc{ref-spotrac}{Spotrac 2026}). Cleaning keeps veteran, non-entry wide receiver deals because rookie-scale contracts follow a separate bargaining mechanism. It also standardizes names and teams, parses economics, converts AAV\% to cap share, repairs inconsistent end years, removes yearly rows embedded inside prior multi-year contracts, and builds previous-contract features. It then enriches rows with nflverse player references, rosters, combine measurements, regular receiving statistics, snap counts, Next Gen receiving metrics, team offense, and schedules (\citeproc{ref-nflreadr}{{nflverse} 2026}). ESPN transaction descriptions are matched by player, team, and contract clues when possible; otherwise the workflow uses an explicit March 15 offseason proxy. Prior-season predictors are the two most recent completed regular seasons before that reference date, not a simple calendar lag; the most recent season is weighted twice as heavily as the second prior season, trend variables compare the two seasons when both exist, and availability flags preserve whether each feature family was observed.
+The contract spine comes from Spotrac wide receiver exports by decade (\citeproc{ref-spotrac}{Spotrac 2026}). Cleaning keeps veteran, non-entry wide receiver deals because rookie contracts are largely governed by draft slot and league bargaining rules rather than the open market. That distinction matters because veteran free agency is where teams decide whether a player is still a long-term building block, a short-term starter, a rotational option, or roster depth. It also standardizes names and teams, parses economics, converts AAV\% to cap share, repairs inconsistent end years, removes yearly rows embedded inside prior multi-year contracts, and builds previous-contract features. It then enriches rows with nflverse player references, rosters, combine measurements, regular receiving statistics, snap counts, Next Gen receiving metrics, team offense, and schedules (\citeproc{ref-nflreadr}{nflverse 2026}). For readers less familiar with football data, snap counts measure playing-time usage, while Next Gen receiving metrics use player-tracking data to describe how a receiver creates and performs on targets. ESPN transaction descriptions are matched by player, team, and contract clues when possible; otherwise the workflow uses an explicit March 15 offseason proxy. Prior-season predictors are the two most recent completed regular seasons before that reference date, not a simple calendar lag; the most recent season is weighted twice as heavily as the second prior season, trend variables compare the two seasons when both exist, and availability flags preserve whether each feature family was observed.
 
-The final modeling files contain 2,796 training contracts from 2002-2025, 91 signed 2026 validation contracts, and 163 unsigned 2026 free-agent candidates. The validation set is kept separate for model comparison, while the test file intentionally leaves outcomes blank because those players are the actual unsigned market to be scored. The EDA in Figure \ref{fig:eda-term-price} shaped two choices. First, the term target is imbalanced enough that a model can look accurate by always predicting one year, so model selection must reward calibrated probabilities through log loss and Brier score. Second, AAV\% rises with term, but the relationship is not just a dollar ranking of players; it is a negotiation surface where the same receiver can have a low-probability high-term scenario and a high-probability one-year scenario.
+The final modeling files contain 2,796 training contracts from 2002-2025, 91 signed 2026 validation contracts, and 163 unsigned 2026 free-agent candidates. The validation set is kept separate for model comparison, functioning like a final exam after models are trained, while the test file intentionally leaves outcomes blank because those players are the actual unsigned market to be scored. The EDA in Figure \ref{fig:eda-term-price} shaped two choices. First, the term target is imbalanced enough that a model can look accurate by always predicting one year, so model selection must reward calibrated probabilities through log loss and Brier score. Second, AAV\% rises with term, but the relationship is not just a dollar ranking of players; it is a negotiation surface where the same receiver can have a low-probability high-term scenario and a high-probability one-year scenario. A longer term usually signals that a team is willing to reserve future cap space and roster plans for the player; a one-year deal often signals flexibility, injury or age caution, or a prove-it opportunity for the player.
 
-Modeling uses \texttt{tidymodels} recipes and engines (\citeproc{ref-tidymodels}{{tidymodels} 2026}). Identifiers, audit dates, signing team, and current-contract outcomes are removed. Categorical predictors receive unknown/novel handling, mode imputation, and dummy encoding; numeric predictors receive median imputation, zero-variance filtering, and normalization. The term task drops current AAV and AAV\%; the AAV\% task drops current AAV but keeps term because production scoring evaluates price under supplied term scenarios. Screening compared null, linear, penalized, tree, random forest, boosted, neural-network, and LightGBM-style candidates where available. Final tuning used grouped five-fold cross-validation by player, which prevents one player's related contracts from appearing in both assessment and fitting folds. The term model minimizes multinomial log loss because the output is a five-class probability vector; the AAV\% model minimizes RMSE because the output is a continuous cap-share price. The selected predictive pair is XGBoost for both tasks (\citeproc{ref-xgboost}{Chen and Guestrin 2016}); lasso multinomial regression and ridge regression provide audit models (\citeproc{ref-glmnet}{Friedman et al. 2010}).
+Modeling uses \texttt{tidymodels} recipes and engines (\citeproc{ref-tidymodels}{tidymodels 2026}). Identifiers, audit dates, signing team, and current-contract outcomes are removed. Categorical predictors receive unknown/novel handling, mode imputation, and dummy encoding; numeric predictors receive median imputation, zero-variance filtering, and normalization. The term task drops current AAV and AAV\%; the AAV\% task drops current AAV but keeps term because production scoring evaluates price under supplied term scenarios. Screening compared null, linear, penalized, tree, random forest, boosted, neural-network, and LightGBM-style candidates where available. Final tuning used Bayesian optimization with grouped five-fold cross-validation by player, which prevents one player's related contracts from appearing in both assessment and fitting folds. The term model minimizes multinomial log loss because the output is a five-class probability vector; the AAV\% model minimizes RMSE because the output is a continuous cap-share price. The selected predictive pair is XGBoost for both tasks (\citeproc{ref-xgboost}{Chen and Guestrin 2016}); lasso multinomial regression and ridge regression provide audit models (\citeproc{ref-glmnet}{Friedman, Hastie, and Tibshirani 2010}).
 
 \section{Results and Discussion}\label{results-and-discussion}
 
-On the signed 2026 validation set, the tuned XGBoost term model achieved log loss 0.537, Brier score 0.057, and accuracy 82.4\%. The null majority classifier is more accurate because 76 of 91 validation contracts are one-year deals, but it is worse on probability scores; that result confirms the EDA rather than contradicting the model. The useful term output is a probability distribution, not a winner-take-all label. The XGBoost AAV\% model achieved RMSE 0.0057, MAE 0.0026, and \(R^2 = 0.903\). At the implied 2026 cap, the RMSE is roughly \$1.71M, which is precise enough for market screening while still leaving room for information public data cannot see.
+On the signed 2026 validation set, the tuned XGBoost term model achieved log loss 0.537, Brier score 0.057, and accuracy 82.4\%. The null majority classifier is more accurate because 76 of 91 validation contracts are one-year deals, but it is worse on probability scores; that result confirms the EDA rather than contradicting the model. In practical terms, accuracy asks whether the top guess was right, while log loss and Brier score ask whether the model assigned sensible confidence to all possible contract lengths. The useful term output is a probability distribution, not a winner-take-all label. The XGBoost AAV\% model achieved RMSE 0.0057, MAE 0.0026, and \(R^2 = 0.903\). At the implied 2026 cap, the RMSE is roughly \$1.71M, which is precise enough for market screening while still leaving room for information public data cannot see.
 
 The tuned comparisons in Appendix B also show why the final system keeps both predictive and audit models. XGBoost is the best validation choice for term by log loss and for AAV\% by RMSE, but the margins over random forest and ridge-style alternatives are small enough that interpretability checks matter. The lasso term model and ridge AAV\% model are therefore not fallback forecasts; they are safeguards that expose whether the stronger nonlinear models are leaning on sensible football and market signals. This is especially important because the strongest-looking accuracy benchmark is the least informative one: a model that predicts one year for everyone can exploit the 2026 class mix without producing useful probabilities for the few players who might command multi-year deals.
 
-The interpretation artifacts in Appendix C support the two-model design. Term importance is led by contract number, years of experience, previous-team/matching indicators, prior timing, age, and previous market value; recent production appears, but less dominantly. Compensation importance is led by weighted receiving yards, yards per game, first downs per game, target share, prior cap share, snap role, and the supplied term scenario. In plain language, the model treats term as a commitment and career-stage decision, while AAV\% is more directly a receiving-value and market-price decision. The penalized audit models point in the same direction, which makes the boosted results easier to trust: the strongest predictive signals are football-plausible rather than artifacts of row order, player identifiers, or post-signing outcomes.
+The interpretation artifacts in Appendix C support the two-model design. Term importance is led by contract number, years of experience, previous-team/matching indicators, prior timing, age, and previous market value; recent production appears, but less dominantly. Compensation importance is led by weighted receiving yards, yards per game, first downs per game, target share, prior cap share, snap role, and the supplied term scenario. For a football audience, that separation is intuitive: a receiver can still produce enough to earn a useful salary while no longer fitting the profile of a player a team wants to lock in for several seasons. In plain language, the model treats term as a commitment and career-stage decision, while AAV\% is more directly a receiving-value and market-price decision. The penalized audit models point in the same direction, which makes the boosted results easier to trust: the strongest predictive signals are football-plausible rather than artifacts of row order, player identifiers, or post-signing outcomes.
 
-Applied to the unsigned 2026 receiver pool, all 163 scored players have a modal one-year contract, the mean one-year probability is 85.8\%, and the mean probability of any multi-year outcome is 14.2\%. Price remains right-skewed: mean expected AAV is \$1.49M, median expected AAV is \$1.11M, and the maximum is \$11.52M. Deebo Samuel, Jauan Jennings, and Keenan Allen top the expected-AAV ranking, but even their modal forecast remains one year. This is why the final output is a term-price menu: expected AAV weights all term scenarios by their probabilities, while modal AAV reports the price attached to the most likely term. Player-level menus are available in the \href{https://rentosaijo.github.io/NFLxC/}{companion dashboard}, and Appendix D shows both the market board and scenario paths.
+Applied to the unsigned 2026 receiver pool, all 163 scored players have a modal one-year contract, the mean one-year probability is 85.8\%, and the mean probability of any multi-year outcome is 14.2\%. This does not mean every player is interchangeable. It means the unsigned market, by this point in the offseason, is mostly made up of players whom teams may value for specific roles without wanting to make a long commitment. Price remains right-skewed: mean expected AAV is \$1.49M, median expected AAV is \$1.11M, and the maximum is \$11.52M. Deebo Samuel, Jauan Jennings, and Keenan Allen top the expected-AAV ranking, but even their modal forecast remains one year. This is why the final output is a term-price menu: expected AAV weights all term scenarios by their probabilities, while modal AAV reports the price attached to the most likely term. Player-level menus are available in the \href{https://rentosaijo.github.io/NFLxC/}{companion dashboard}, and Appendix D shows both the market board and scenario paths.
 
 The conclusion is that the project is useful less as a single prediction machine than as a disciplined way to separate contract questions. The first research question receives a qualified yes: term is predictable enough to rank probabilities, but the validation distribution makes a hard class label too blunt. The second question receives a stronger yes: AAV\% is meaningfully predictable when the model is given a term scenario. The third question is answered by the contrast between feature families. Contract history and career stage explain commitment; receiving production, prior price, role, and term explain compensation. That split makes the final app more interpretable because a user can compare one-year, two-year, and longer paths instead of reading one dollar number as certainty.
 
@@ -746,22 +760,22 @@ Figure \ref{fig:scenario-paths} displays the scenario-price menu for the three h
 \section*{References}\label{references}
 \addcontentsline{toc}{section}{References}
 
-\protect\phantomsection\label{refs}
-\begin{CSLReferences}{1}{1}
+\phantomsection\label{refs}
+\begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-xgboost}
-Chen, Tianqi, and Carlos Guestrin. 2016. {``XGBoost: A Scalable Tree Boosting System.''} \emph{Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining}, 785--94. \url{https://arxiv.org/abs/1603.02754}.
+Chen, Tianqi, and Carlos Guestrin. 2016. {``XGBoost: A Scalable Tree Boosting System.''} In \emph{Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining}, 785--94. \url{https://arxiv.org/abs/1603.02754}.
 
 \bibitem[\citeproctext]{ref-glmnet}
 Friedman, Jerome, Trevor Hastie, and Robert Tibshirani. 2010. {``Regularization Paths for Generalized Linear Models via Coordinate Descent.''} \emph{Journal of Statistical Software} 33 (1): 1--22. \url{https://www.jstatsoft.org/article/view/v033i01}.
 
 \bibitem[\citeproctext]{ref-nflreadr}
-{nflverse}. 2026. \emph{Nflreadr: Download Nflverse Data}. \href{https://nflreadr.nflverse.com/}{Https://nflreadr.nflverse.com/}.
+nflverse. 2026. {``Nflreadr: Download Nflverse Data.''} \url{https://nflreadr.nflverse.com/}.
 
 \bibitem[\citeproctext]{ref-spotrac}
-Spotrac. 2026. \emph{NFL Wide Receiver Contracts}. \href{https://www.spotrac.com/nfl/contracts/wide-receiver/}{Https://www.spotrac.com/nfl/contracts/wide-receiver/}.
+Spotrac. 2026. {``NFL Wide Receiver Contracts.''} \url{https://www.spotrac.com/nfl/contracts/wide-receiver/}.
 
 \bibitem[\citeproctext]{ref-tidymodels}
-{tidymodels}. 2026. \emph{Tidymodels: Easily Install and Load the Tidymodels Packages}. \href{https://www.tidymodels.org/}{Https://www.tidymodels.org/}.
+tidymodels. 2026. {``Tidymodels: Easily Install and Load the Tidymodels Packages.''} \url{https://www.tidymodels.org/}.
 
 \end{CSLReferences}
 
