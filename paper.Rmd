@@ -2,7 +2,7 @@
 title: "Projecting NFL Wide Receiver Contracts"
 subtitle: "Term Probabilities and Cap-Share Price for the 2026 Veteran Market"
 author: "Rento Saijo, Atticus Roop, and Manahil Shoaib"
-date: "May 1, 2026"
+date: "May 11, 2026"
 fontsize: 10pt
 documentclass: article
 geometry: top=1in, bottom=1in, left=1in, right=1in
@@ -45,21 +45,7 @@ header-includes:
     \titleformat{\section}{\large\bfseries}{\thesection}{0.5em}{}
     \titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
     \makeatletter
-    \newcommand{\@subtitle}{}
-    \newcommand{\subtitle}[1]{\gdef\@subtitle{#1}}
-    \renewcommand{\maketitle}{
-      \thispagestyle{plain}
-      \begin{center}
-        {\Large\bfseries \@title \par}
-        \vspace{0.12em}
-        {\normalsize \@subtitle \par}
-        \vspace{0.2em}
-        {\normalsize \@author \par}
-        \vspace{0.18em}
-        {\small \@date \par}
-      \end{center}
-      \vspace{0.2em}
-    }
+    \renewcommand{\maketitle}{}
     \makeatother
     \fancypagestyle{plain}{
       \fancyhf{}
@@ -502,6 +488,34 @@ model_pair_tbl <- tibble(
   )
 )
 
+main_split_tbl <- split_tbl |>
+  transmute(
+    Split,
+    Rows = comma_num(Rows),
+    Players = comma_num(Players),
+    Years,
+    `Use in Paper` = c(
+      'Historical signed veteran WR contracts used to learn the relationship between pre-signing information and contract outcomes.',
+      'Signed 2026 contracts held out for model comparison, so performance is checked on newer market behavior.',
+      'Unsigned 2026 free agents scored by the final models; outcomes are intentionally unknown at prediction time.'
+    )
+  )
+
+main_results_tbl <- tibble(
+  Question = c('Contract term', 'Contract term benchmark', 'AAV% conditional on term'),
+  `Model or Benchmark` = c('Tuned XGBoost', 'Null majority', 'Tuned XGBoost'),
+  `Validation Evidence` = c(
+    sprintf('Log loss %.3f; Brier %.3f; accuracy %.1f%%', term_xgb_row$mnLogLoss, term_xgb_row$brier, 100 * term_xgb_row$accuracy),
+    sprintf('Accuracy %.1f%%, but weaker probability scores', 100 * (validate_data |> count(term) |> arrange(desc(n)) |> slice(1) |> pull(n) / nrow(validate_data))),
+    sprintf('RMSE %.4f; MAE %.4f; R-squared %.3f', aav_xgb_row$rmse, aav_xgb_row$mae, aav_xgb_row$rsq)
+  ),
+  Interpretation = c(
+    'Useful for ranking likely term scenarios rather than declaring one certain answer.',
+    'Shows why raw accuracy is misleading in a one-year-heavy market.',
+    'Useful for translating player, role, market, and term information into cap-share price.'
+  )
+)
+
 forecast_summary_tbl <- tibble(
   Quantity = c(
     'Scored unsigned players',
@@ -524,22 +538,53 @@ forecast_summary_tbl <- tibble(
 )
 ```
 
+\begin{titlepage}
+\thispagestyle{empty}
 \begin{center}
-\begin{minipage}{0.86\textwidth}
+\vspace*{0.72in}
+{\LARGE\bfseries Projecting NFL Wide Receiver Contracts\par}
+\vspace{0.20in}
+{\large Term Probabilities and Cap-Share Price for the 2026 Veteran Market\par}
+\vspace{0.32in}
+{\normalsize Rento Saijo, Atticus Roop, and Manahil Shoaib\par}
+\vspace{0.12in}
+{\normalsize May 11, 2026\par}
+\end{center}
+\vspace{0.35in}
+\begin{center}
+\begin{minipage}{0.78\textwidth}
 \small
-
-\textbf{Abstract.} This paper asks whether public data can predict veteran NFL wide receiver contract term, average annual value as a salary-cap share (AAV\%), and the variables that make those forecasts credible. Spotrac contract records are enriched with nflverse player, roster, combine, production, snap, Next Gen Stats, team, and schedule data, plus ESPN transaction dates when matched. Because term and annual price are different negotiation choices, we use a multiclass term model and a conditional AAV\% model. Tuned XGBoost performs best on signed 2026 validation contracts, with term log loss `r round(term_xgb_row$mnLogLoss[[1]], 3)` and AAV\% RMSE `r round(aav_xgb_row$rmse[[1]], 4)`. Scoring `r nrow(test_data)` unsigned 2026 receivers produces a short-term market: every player has a modal one-year deal, with median expected AAV of `r money_m(summary_stats$median_aav, 2)`.
-
+\textbf{Abstract.} This paper asks whether public data can predict three parts of the veteran NFL wide receiver contract market: contract term, average annual value as a salary-cap share (AAV\%), and the variables that make those forecasts credible. The project begins with Spotrac wide receiver contract exports, then enriches each deal with nflverse player identity, rosters, combine measurements, receiving production, snap usage, Next Gen receiving metrics, team context, schedule timing, and ESPN transaction dates when matched. The football problem motivates the modeling design: term measures how much commitment a team is willing to make, while AAV\% measures annual price. We therefore fit a multiclass term model and a conditional AAV\% model. Tuned XGBoost performs best on signed 2026 validation contracts, with term log loss `r round(term_xgb_row$mnLogLoss[[1]], 3)` and AAV\% RMSE `r round(aav_xgb_row$rmse[[1]], 4)`. Scoring `r nrow(test_data)` unsigned 2026 receivers produces a short-term market: every player has a modal one-year deal, with median expected AAV of `r money_m(summary_stats$median_aav, 2)`. The accompanying dashboard (\href{https://rentosaijo.github.io/NFLxC/}{rentosaijo.github.io/NFLxC}) translates those forecasts into player-level term-price menus for roster and salary-cap planning. The conclusion is predictive rather than causal: public data can separate likely term scenarios from price scenarios, but guarantees, injuries, team needs, and private negotiations remain outside the observed data.
 \end{minipage}
 \end{center}
+\end{titlepage}
+\setcounter{page}{1}
 
 # Introduction and Background
 
-An NFL wide receiver is an offensive player whose main job is to catch passes, but wide receiver contracts are not priced on catches alone. A one-year depth contract, a two-year role-player agreement, and a four-year star extension all belong to the same position group while expressing different levels of team commitment, player leverage, age risk, and market timing. Average annual value (AAV) is reported dollars per contract year; AAV% divides AAV by the salary cap at signing so a deal from 2005 and a deal from 2025 can be compared on the same economic scale.
+An NFL wide receiver is an offensive player whose primary job is to create value in the passing game by getting open, catching passes, gaining yards, and drawing defensive attention. The same position label covers very different labor-market roles. A top receiver may be a team's first option in the passing game, a role player may stretch the field or play mostly in the slot, and a depth receiver may be signed mainly for injuries, rotation, or special-teams flexibility. Contracts therefore price more than catches. They also express how much future roster space, salary-cap space, and risk a team is willing to assign to a player.
+
+The NFL salary cap is a league-wide annual spending limit. Average annual value (AAV) is reported dollars per contract year, while AAV% divides AAV by the salary cap at signing so a deal from 2005 and a deal from 2025 can be compared on the same economic scale. Contract term is the number of years in the deal. A one-year contract often gives both sides flexibility; a multi-year deal usually signals stronger team commitment, greater player leverage, or a belief that the player's value will remain useful beyond the next season. This distinction matters because two players can command similar annual salaries while receiving very different levels of long-term security.
 
 The research questions are: Can veteran wide receiver contract term be predicted from public information available before signing? Can AAV% be predicted with useful accuracy once term is specified? Which player, production, contract-history, team-context, and market variables explain those predictions? Public contract forecasts are often single dollar estimates, while actual negotiation resembles a menu of term-price scenarios. We therefore use two linked model families: a term classifier over one, two, three, four, and five-or-more years, and a conditional price model that estimates AAV% under each possible term scenario.
 
-Figure \@ref(fig:eda-term-price) previews the empirical reason for this architecture. The top row shows that one-year deals are already common in training (`r pct_num(train_one_year, 1)`) and become dominant in signed 2026 validation contracts (`r pct_num(validate_one_year, 1)`), so term must be evaluated with probability scores rather than raw accuracy. The bottom row shows that longer commitments occupy a different AAV% region, which supports pricing AAV% conditional on a supplied term instead of forcing one model to learn both decisions at once.
+# Data, EDA, and Methods
+
+The contract spine comes from Spotrac wide receiver exports by decade [@spotrac]. Cleaning keeps veteran, non-entry wide receiver deals because rookie contracts are largely governed by draft slot and league bargaining rules rather than the open market. That distinction matters because veteran free agency is where teams decide whether a player is still a long-term building block, a short-term starter, a rotational option, or roster depth. The workflow standardizes names and teams, parses economics, converts AAV% to cap share, repairs inconsistent end years, removes yearly rows embedded inside prior multi-year contracts, and builds previous-contract features. It then enriches rows with nflverse player references, rosters, combine measurements, regular receiving statistics, snap counts, Next Gen receiving metrics, team offense, and schedules [@nflreadr]. Snap counts measure playing-time usage; Next Gen receiving metrics use player-tracking data to describe how a receiver creates and performs on targets. ESPN transaction descriptions are matched by player, team, and contract clues when possible; otherwise the workflow uses an explicit March 15 offseason proxy.
+
+```{r main-split-table, results = 'asis'}
+main_split_tbl |>
+  table_latex(
+    col_names = c('Split', 'Rows', 'Players', 'Years', 'Use in Paper'),
+    caption = '(\\#tab:main-splits) Modeling files and their roles in the analysis.',
+    align = c('l', 'r', 'r', 'c', 'l'),
+    wrap_col = 5,
+    wrap_width = '3.1in',
+    font_size = 6.9
+  )
+```
+
+Table \@ref(tab:main-splits) shows the final row universe. Each row is a contract, so some players appear more than once across their careers; to avoid repeated-player leakage, all model tuning uses player-grouped folds instead of the typical random `k`-fold. Lasso and ridge coefficients are therefore predictive audit signals rather than independent causal effects. Tree-based models do not rely on linear-model error independence for coefficient tests, but they can still be overvalidated if the same player's contracts leak across folds. Prior-season predictors are the two most recent completed regular seasons before the reference date, with the most recent season weighted twice as heavily. Figure \@ref(fig:eda-term-price) previews the empirical reason for the two-model architecture. One-year deals are common in training (`r pct_num(train_one_year, 1)`) and dominant in signed 2026 validation contracts (`r pct_num(validate_one_year, 1)`), so term must be evaluated with probability scores rather than raw accuracy. AAV% also rises with term, but the relationship is not just a dollar ranking of players; it is a negotiation surface where the same receiver can have a low-probability high-term scenario and a high-probability one-year scenario.
 
 ```{r eda-term-price-plot, fig.width = 6.25, fig.height = 2.75, fig.cap = '(\\#fig:eda-term-price) Term concentration and term-price separation in the labeled data. Bars show each term class as a share of contracts; boxes show the AAV% distribution within each term. The validation market is more one-year concentrated than training, while longer deals occupy higher cap-share ranges, motivating probability-based term evaluation and a conditional AAV% model.'}
 eda_palette <- c('1' = '#4C78A8', '2' = '#72B7B2', '3' = '#F58518', '4' = '#54A24B', '5+' = '#B279A2')
@@ -576,31 +621,38 @@ aav_plot <- aav_plot_data |>
 mix_plot / aav_plot + plot_layout(heights = c(0.9, 1.15))
 ```
 
-# Data, EDA, and Methods
-
-The contract spine comes from Spotrac wide receiver exports by decade [@spotrac]. Cleaning keeps veteran, non-entry wide receiver deals because rookie contracts are largely governed by draft slot and league bargaining rules rather than the open market. That distinction matters because veteran free agency is where teams decide whether a player is still a long-term building block, a short-term starter, a rotational option, or roster depth. It also standardizes names and teams, parses economics, converts AAV% to cap share, repairs inconsistent end years, removes yearly rows embedded inside prior multi-year contracts, and builds previous-contract features. It then enriches rows with nflverse player references, rosters, combine measurements, regular receiving statistics, snap counts, Next Gen receiving metrics, team offense, and schedules [@nflreadr]. For readers less familiar with football data, snap counts measure playing-time usage, while Next Gen receiving metrics use player-tracking data to describe how a receiver creates and performs on targets. ESPN transaction descriptions are matched by player, team, and contract clues when possible; otherwise the workflow uses an explicit March 15 offseason proxy. Prior-season predictors are the two most recent completed regular seasons before that reference date, not a simple calendar lag; the most recent season is weighted twice as heavily as the second prior season, trend variables compare the two seasons when both exist, and availability flags preserve whether each feature family was observed.
-
-The final modeling files contain `r comma_num(nrow(train_data))` training contracts from `r min(train_data$startYear)`-`r max(train_data$startYear)`, `r nrow(validate_data)` signed 2026 validation contracts, and `r nrow(test_data)` unsigned 2026 free-agent candidates. The validation set is kept separate for model comparison, functioning like a final exam after models are trained, while the test file intentionally leaves outcomes blank because those players are the actual unsigned market to be scored. The EDA in Figure \@ref(fig:eda-term-price) shaped two choices. First, the term target is imbalanced enough that a model can look accurate by always predicting one year, so model selection must reward calibrated probabilities through log loss and Brier score. Second, AAV% rises with term, but the relationship is not just a dollar ranking of players; it is a negotiation surface where the same receiver can have a low-probability high-term scenario and a high-probability one-year scenario. A longer term usually signals that a team is willing to reserve future cap space and roster plans for the player; a one-year deal often signals flexibility, injury or age caution, or a prove-it opportunity for the player.
-
-Modeling uses `tidymodels` recipes and engines [@tidymodels]. Identifiers, audit dates, signing team, and current-contract outcomes are removed. Categorical predictors receive unknown/novel handling, mode imputation, and dummy encoding; numeric predictors receive median imputation, zero-variance filtering, and normalization. The term task drops current AAV and AAV%; the AAV% task drops current AAV but keeps term because production scoring evaluates price under supplied term scenarios. Screening compared null, linear, penalized, tree, random forest, boosted, neural-network, and LightGBM-style candidates where available. Final tuning used Bayesian optimization with grouped five-fold cross-validation by player, which prevents one player's related contracts from appearing in both assessment and fitting folds. The term model minimizes multinomial log loss because the output is a five-class probability vector; the AAV% model minimizes RMSE because the output is a continuous cap-share price. The selected predictive pair is XGBoost for both tasks [@xgboost]; lasso multinomial regression and ridge regression provide audit models [@glmnet].
+Modeling uses `tidymodels` recipes and engines [@tidymodels]. Identifiers, audit dates, signing team, and current-contract outcomes are removed. Categorical predictors receive unknown/novel handling, mode imputation, and dummy encoding; numeric predictors receive median imputation, zero-variance filtering, and normalization. The term task drops current AAV and AAV%; the AAV% task drops current AAV but keeps term because production scoring evaluates price under supplied term scenarios. Screening compared null, linear, penalized, tree, random forest, boosted, neural-network, and LightGBM-style candidates where available. Final tuning used Bayesian optimization with grouped five-fold cross-validation by player. The term model minimizes multinomial log loss because the output is a five-class probability vector; the AAV% model minimizes RMSE because the output is a continuous cap-share price. The selected predictive pair is XGBoost for both tasks [@xgboost]; lasso multinomial regression and ridge regression provide audit models [@glmnet].
 
 # Results and Discussion
 
 On the signed 2026 validation set, the tuned XGBoost term model achieved log loss `r round(term_xgb_row$mnLogLoss[[1]], 3)`, Brier score `r round(term_xgb_row$brier[[1]], 3)`, and accuracy `r pct_num(term_xgb_row$accuracy[[1]], 1)`. The null majority classifier is more accurate because `r validate_data |> count(term) |> arrange(desc(n)) |> slice(1) |> pull(n)` of `r nrow(validate_data)` validation contracts are one-year deals, but it is worse on probability scores; that result confirms the EDA rather than contradicting the model. In practical terms, accuracy asks whether the top guess was right, while log loss and Brier score ask whether the model assigned sensible confidence to all possible contract lengths. The useful term output is a probability distribution, not a winner-take-all label. The XGBoost AAV% model achieved RMSE `r round(aav_xgb_row$rmse[[1]], 4)`, MAE `r round(aav_xgb_row$mae[[1]], 4)`, and \(R^2 = `r round(aav_xgb_row$rsq[[1]], 3)`\). At the implied 2026 cap, the RMSE is roughly `r money_m(term_rmse_dollars, 2)`, which is precise enough for market screening while still leaving room for information public data cannot see.
 
+```{r main-results-table, results = 'asis'}
+main_results_tbl |>
+  table_latex(
+    col_names = c('Question', 'Model or Benchmark', 'Validation Evidence', 'Interpretation'),
+    caption = '(\\#tab:main-results) Main validation evidence and how it should be read.',
+    align = c('l', 'l', 'l', 'l'),
+    wrap_col = 3,
+    wrap_width = '1.75in',
+    font_size = 6.7
+  ) |>
+  kableExtra::column_spec(4, width = '2.35in')
+```
+
 The tuned comparisons in Appendix B also show why the final system keeps both predictive and audit models. XGBoost is the best validation choice for term by log loss and for AAV% by RMSE, but the margins over random forest and ridge-style alternatives are small enough that interpretability checks matter. The lasso term model and ridge AAV% model are therefore not fallback forecasts; they are safeguards that expose whether the stronger nonlinear models are leaning on sensible football and market signals. This is especially important because the strongest-looking accuracy benchmark is the least informative one: a model that predicts one year for everyone can exploit the 2026 class mix without producing useful probabilities for the few players who might command multi-year deals.
 
-The interpretation artifacts in Appendix C support the two-model design. Term importance is led by contract number, years of experience, previous-team/matching indicators, prior timing, age, and previous market value; recent production appears, but less dominantly. Compensation importance is led by weighted receiving yards, yards per game, first downs per game, target share, prior cap share, snap role, and the supplied term scenario. For a football audience, that separation is intuitive: a receiver can still produce enough to earn a useful salary while no longer fitting the profile of a player a team wants to lock in for several seasons. In plain language, the model treats term as a commitment and career-stage decision, while AAV% is more directly a receiving-value and market-price decision. The penalized audit models point in the same direction, which makes the boosted results easier to trust: the strongest predictive signals are football-plausible rather than artifacts of row order, player identifiers, or post-signing outcomes.
+The interpretation artifacts in Appendix C support the two-model design. Term importance is led by contract number, years of experience, previous-team/matching indicators, prior timing, age, and previous market value; recent production appears, but less dominantly. Compensation importance is led by weighted receiving yards, yards per game, first downs per game, target share, prior cap share, snap role, and the supplied term scenario. That separation follows the way teams make roster decisions: a receiver can still produce enough to earn a useful salary while no longer fitting the profile of a player a team wants to lock in for several seasons. The model therefore treats term as a commitment and career-stage decision, while AAV% is more directly a receiving-value and market-price decision. The penalized audit models point in the same direction, which makes the boosted results easier to trust: the strongest predictive signals are football-plausible rather than artifacts of row order, player identifiers, or post-signing outcomes.
 
-Applied to the unsigned 2026 receiver pool, all `r nrow(summary_xgb)` scored players have a modal one-year contract, the mean one-year probability is `r pct_num(summary_stats$mean_p1, 1)`, and the mean probability of any multi-year outcome is `r pct_num(summary_stats$p2plus, 1)`. This does not mean every player is interchangeable. It means the unsigned market, by this point in the offseason, is mostly made up of players whom teams may value for specific roles without wanting to make a long commitment. Price remains right-skewed: mean expected AAV is `r money_m(summary_stats$mean_aav, 2)`, median expected AAV is `r money_m(summary_stats$median_aav, 2)`, and the maximum is `r money_m(summary_stats$max_aav, 2)`. Deebo Samuel, Jauan Jennings, and Keenan Allen top the expected-AAV ranking, but even their modal forecast remains one year. This is why the final output is a term-price menu: expected AAV weights all term scenarios by their probabilities, while modal AAV reports the price attached to the most likely term. Player-level menus are available in the \href{https://rentosaijo.github.io/NFLxC/}{companion dashboard}, and Appendix D shows both the market board and scenario paths.
+Applied to the unsigned 2026 receiver pool, all `r nrow(summary_xgb)` scored players have a modal one-year contract, the mean one-year probability is `r pct_num(summary_stats$mean_p1, 1)`, and the mean probability of any multi-year outcome is `r pct_num(summary_stats$p2plus, 1)`. This does not mean every player is interchangeable. It means the unsigned market, by this point in the offseason, is mostly made up of players whom teams may value for specific roles without wanting to make a long commitment. Price remains right-skewed: mean expected AAV is `r money_m(summary_stats$mean_aav, 2)`, median expected AAV is `r money_m(summary_stats$median_aav, 2)`, and the maximum is `r money_m(summary_stats$max_aav, 2)`. Deebo Samuel, Jauan Jennings, and Keenan Allen top the expected-AAV ranking, but even their modal forecast remains one year. This is why the final output is a term-price menu: expected AAV weights all term scenarios by their probabilities, while modal AAV reports the price attached to the most likely term. For a general manager, that menu is a roster-planning tool: it helps compare whether a receiver fits a one-year depth role, a higher-cost starter role, or a multi-year commitment while keeping the team's total cap plan coherent. Player-level menus are available in the \href{https://rentosaijo.github.io/NFLxC/}{companion dashboard}, and Appendix D shows both the market board and scenario paths.
 
-The conclusion is that the project is useful less as a single prediction machine than as a disciplined way to separate contract questions. The first research question receives a qualified yes: term is predictable enough to rank probabilities, but the validation distribution makes a hard class label too blunt. The second question receives a stronger yes: AAV% is meaningfully predictable when the model is given a term scenario. The third question is answered by the contrast between feature families. Contract history and career stage explain commitment; receiving production, prior price, role, and term explain compensation. That split makes the final app more interpretable because a user can compare one-year, two-year, and longer paths instead of reading one dollar number as certainty.
+The conclusion is that the project is useful less as a single prediction machine than as a disciplined way to separate contract questions. The first research question receives a qualified yes: term is predictable enough to rank probabilities, but the validation distribution makes a hard class label too blunt. The second question receives a stronger yes: AAV% is meaningfully predictable when the model is given a term scenario. The third question is answered by the contrast between feature families. Contract history and career stage explain commitment; receiving production, prior price, role, and term explain compensation. Framed as an actionable front-office insight, the model helps identify which receivers are plausibly short-term cap-efficient pieces and which require a larger annual allocation, while the dashboard turns that comparison into a player-by-player planning board rather than a single dollar ranking.
 
 # Limitations and Future Work
 
 The main limitations are measurement, validation size, and unobserved negotiation context. Signing-date matches cover only part of history, player identity matching is probabilistic for fringe players, and Next Gen receiving coverage is thin before recent seasons. The validation set has only `r nrow(validate_data)` signed 2026 contracts and is concentrated in one-year deals, so small metric differences should not be overinterpreted. Public data also omit guarantees, incentives, option years, injury detail, cap room, depth-chart need, agent leverage, and competing offers. That is especially important for AAV: two deals with the same annual value can differ sharply if one is guaranteed and the other is built from non-guaranteed years or incentives.
 
-Future work should add guarantee and incentive targets, automate contract-data refreshes, test calibration and prediction intervals, and move from player-only scoring to team-player matching. A team-aware version would add cap space, receiver depth chart, offensive style, quarterback quality, and recent target vacancy, then score the same receiver under different destinations. The next evaluation should also ask whether a group assigned a 20% chance of multi-year contracts actually signs multi-year deals about one in five times over repeated markets. The present workflow is reproducible enough for that extension: a reader can rebuild the modeling files from the contract exports and public data pulls, verify the time-based split, inspect the baseline and tuned comparisons, and reproduce the final scenario files used by the dashboard.
+Future work should add guarantee and incentive targets, automate contract-data refreshes, test calibration and prediction intervals, and move from player-only scoring to team-player matching. A team-aware version would add cap space, receiver depth chart, offensive style, quarterback quality, and recent target vacancy, then score the same receiver under different destinations. The next evaluation should also ask whether a group assigned a 20% chance of multi-year contracts actually signs multi-year deals about one in five times over repeated markets.
 
 \newpage
 
